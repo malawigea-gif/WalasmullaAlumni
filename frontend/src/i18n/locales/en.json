@@ -1,0 +1,177 @@
+{
+  "app": { "name": "Walasmulla Model Primary School Alumni" },
+  "nav": {
+    "dashboard": "Dashboard",
+    "profile": "My Profile",
+    "fees": "Fee Payments",
+    "donations": "Donations",
+    "labour": "Labour Contributions",
+    "attendance": "My Attendance",
+    "qrCode": "My QR Code",
+    "inbox": "Inbox",
+    "members": "Member Directory",
+    "scanner": "QR Scanner",
+    "sendMessage": "Send Message",
+    "reports": "Reports",
+    "executives": "Executive Management",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "nameWithInitials": "Name with Initials",
+    "phone": "Phone",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "loginButton": "Log In",
+    "registerButton": "Create Account",
+    "resetPassword": "Reset Password",
+    "sendResetLink": "Send Reset Link"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add",
+    "search": "Search",
+    "loading": "Loading...",
+    "submit": "Submit",
+    "close": "Close",
+    "actions": "Actions",
+    "amount": "Amount",
+    "date": "Date",
+    "description": "Description",
+    "year": "Year",
+    "district": "District",
+    "yes": "Yes",
+    "no": "No",
+    "back": "Back",
+    "viewAll": "View All",
+    "none": "None",
+    "reason": "Reason",
+    "confirm": "Confirm",
+    "from": "From",
+    "to": "To"
+  },
+  "profile": {
+    "title": "My Profile",
+    "dateOfBirth": "Date of Birth",
+    "nic": "NIC Number",
+    "permanentAddress": "Permanent Address",
+    "currentAddress": "Current Address",
+    "gramaNiladhari": "Grama Niladhari Division",
+    "divisionalSecretariat": "Divisional Secretariat",
+    "schoolPeriod": "School Period",
+    "academicAchievements": "Academic Achievements",
+    "coCurricularAchievements": "Co-curricular Achievements",
+    "scholarshipExam": "Scholarship Exam Result",
+    "leadershipRoles": "Leadership Roles",
+    "extracurricularGroups": "Extracurricular Groups",
+    "higherEducation": "Higher Education Qualifications",
+    "children": "Children",
+    "addChild": "Add Child",
+    "childName": "Child's Name",
+    "photo": "Profile Photo",
+    "uploadPhoto": "Upload Photo",
+    "scholarship": {
+      "passed": "Passed",
+      "failed": "Failed",
+      "not_applicable": "Not Applicable"
+    }
+  },
+  "fees": {
+    "title": "Fee Payments",
+    "recordPayment": "Record Payment",
+    "paidDate": "Paid Date"
+  },
+  "donations": {
+    "title": "Donations",
+    "recordDonation": "Record Donation",
+    "donatedDate": "Donated Date"
+  },
+  "labour": {
+    "title": "Labour Contributions",
+    "recordContribution": "Record Contribution",
+    "hours": "Hours"
+  },
+  "attendance": {
+    "title": "My Attendance History",
+    "meeting": "Meeting",
+    "scannedAt": "Scanned At",
+    "present": "Present"
+  },
+  "qr": {
+    "title": "My QR Code",
+    "download": "Download QR Code",
+    "instructions": "Show this QR code at meetings to be marked present."
+  },
+  "inbox": {
+    "title": "Inbox",
+    "empty": "No messages yet.",
+    "from": "From",
+    "markRead": "Mark as Read"
+  },
+  "members": {
+    "title": "Member Directory",
+    "searchPlaceholder": "Search by name or email",
+    "viewProfile": "View Profile"
+  },
+  "scanner": {
+    "title": "QR Scanner",
+    "selectMeeting": "Select Meeting",
+    "startScanning": "Start Scanning",
+    "stopScanning": "Stop Scanning",
+    "scanSuccess": "Attendance recorded for {{name}}",
+    "cameraPermission": "Please allow camera access to scan QR codes."
+  },
+  "messages": {
+    "title": "Send Message",
+    "recipientType": "Recipient Type",
+    "individual": "Individual",
+    "group": "Group",
+    "broadcast": "Broadcast (All Members)",
+    "selectRecipient": "Select Recipient",
+    "subject": "Subject",
+    "body": "Message",
+    "send": "Send Message",
+    "sent": "Message sent successfully"
+  },
+  "reports": {
+    "title": "Reports Dashboard",
+    "totalMembers": "Total Members",
+    "feeCollection": "Fee Collection by Year",
+    "donationsTotal": "Total Donations",
+    "labourHours": "Total Labour Hours",
+    "meetingAttendance": "Meeting Attendance"
+  },
+  "executives": {
+    "title": "Executive Management",
+    "currentHolders": "Current Executive Committee",
+    "auditHistory": "Audit History",
+    "appoint": "Appoint",
+    "remove": "Remove",
+    "vacant": "Vacant",
+    "appointTitle": "Appoint Executive",
+    "removeTitle": "Remove Executive",
+    "selectMember": "Select Member",
+    "positions": {
+      "chairman": "Chairman",
+      "vice_chairman": "Vice Chairman",
+      "secretary": "Secretary",
+      "vice_secretary": "Vice Secretary",
+      "treasurer": "Treasurer"
+    },
+    "actionAppointed": "Appointed",
+    "actionRemoved": "Removed"
+  },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}",
+    "quickLinks": "Quick Links"
+  }
+}

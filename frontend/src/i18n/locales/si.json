@@ -1,0 +1,177 @@
+{
+  "app": { "name": "වලස්මුල්ල ආදර්ශ ප්‍රාථමික විද්‍යාලීය ආදි ශිෂ්‍ය සංගමය" },
+  "nav": {
+    "dashboard": "මුල් පිටුව",
+    "profile": "මගේ පැතිකඩ",
+    "fees": "සාමාජික ගාස්තු",
+    "donations": "පරිත්‍යාග",
+    "labour": "ශ්‍රම දායකත්වය",
+    "attendance": "මගේ පැමිණීම",
+    "qrCode": "මගේ QR කේතය",
+    "inbox": "පණිවිඩ පෙට්ටිය",
+    "members": "සාමාජික නාමාවලිය",
+    "scanner": "QR ස්කෑනරය",
+    "sendMessage": "පණිවිඩයක් යවන්න",
+    "reports": "වාර්තා",
+    "executives": "විධායක කළමනාකරණය",
+    "logout": "ඉවත් වන්න"
+  },
+  "auth": {
+    "login": "පිවිසෙන්න",
+    "register": "ලියාපදිංචි වන්න",
+    "email": "විද්‍යුත් තැපෑල",
+    "password": "මුරපදය",
+    "confirmPassword": "මුරපදය තහවුරු කරන්න",
+    "fullName": "සම්පූර්ණ නම",
+    "nameWithInitials": "මුලකුරු සමඟ නම",
+    "phone": "දුරකථන අංකය",
+    "forgotPassword": "මුරපදය අමතකද?",
+    "noAccount": "ගිණුමක් නැද්ද?",
+    "haveAccount": "දැනටමත් ගිණුමක් තිබේද?",
+    "loginButton": "පිවිසෙන්න",
+    "registerButton": "ගිණුම සාදන්න",
+    "resetPassword": "මුරපදය යළි සකසන්න",
+    "sendResetLink": "යළි සැකසුම් සබැඳිය යවන්න"
+  },
+  "common": {
+    "save": "සුරකින්න",
+    "cancel": "අවලංගු කරන්න",
+    "edit": "සංශෝධනය කරන්න",
+    "delete": "මකන්න",
+    "add": "එකතු කරන්න",
+    "search": "සොයන්න",
+    "loading": "පූරණය වෙමින්...",
+    "submit": "ඉදිරිපත් කරන්න",
+    "close": "වසන්න",
+    "actions": "ක්‍රියා",
+    "amount": "මුදල",
+    "date": "දිනය",
+    "description": "විස්තරය",
+    "year": "වර්ෂය",
+    "district": "දිස්ත්‍රික්කය",
+    "yes": "ඔව්",
+    "no": "නැත",
+    "back": "ආපසු",
+    "viewAll": "සියල්ල බලන්න",
+    "none": "කිසිවක් නැත",
+    "reason": "හේතුව",
+    "confirm": "තහවුරු කරන්න",
+    "from": "සිට",
+    "to": "දක්වා"
+  },
+  "profile": {
+    "title": "මගේ පැතිකඩ",
+    "dateOfBirth": "උපන් දිනය",
+    "nic": "ජාතික හැඳුනුම්පත් අංකය",
+    "permanentAddress": "ස්ථිර ලිපිනය",
+    "currentAddress": "වත්මන් ලිපිනය",
+    "gramaNiladhari": "ග්‍රාම නිලධාරී වසම",
+    "divisionalSecretariat": "ප්‍රාදේශීය ලේකම් කොට්ඨාසය",
+    "schoolPeriod": "පාසල් කාලය",
+    "academicAchievements": "අධ්‍යාපනික ජයග්‍රහණ",
+    "coCurricularAchievements": "පාඨමාලා බාහිර ජයග්‍රහණ",
+    "scholarshipExam": "ශිෂ්‍යත්ව විභාග ප්‍රතිඵලය",
+    "leadershipRoles": "නායකත්ව භූමිකා",
+    "extracurricularGroups": "විෂය බාහිර කණ්ඩායම්",
+    "higherEducation": "උසස් අධ්‍යාපන සුදුසුකම්",
+    "children": "දරුවන්",
+    "addChild": "දරුවෙකු එකතු කරන්න",
+    "childName": "දරුවාගේ නම",
+    "photo": "පැතිකඩ ඡායාරූපය",
+    "uploadPhoto": "ඡායාරූපය උඩුගත කරන්න",
+    "scholarship": {
+      "passed": "සමත්",
+      "failed": "අසමත්",
+      "not_applicable": "අදාළ නොවේ"
+    }
+  },
+  "fees": {
+    "title": "සාමාජික ගාස්තු",
+    "recordPayment": "ගෙවීමක් සටහන් කරන්න",
+    "paidDate": "ගෙවූ දිනය"
+  },
+  "donations": {
+    "title": "පරිත්‍යාග",
+    "recordDonation": "පරිත්‍යාගයක් සටහන් කරන්න",
+    "donatedDate": "පරිත්‍යාග කළ දිනය"
+  },
+  "labour": {
+    "title": "ශ්‍රම දායකත්වය",
+    "recordContribution": "දායකත්වයක් සටහන් කරන්න",
+    "hours": "පැය ගණන"
+  },
+  "attendance": {
+    "title": "මගේ පැමිණීමේ ඉතිහාසය",
+    "meeting": "රැස්වීම",
+    "scannedAt": "ස්කෑන් කළ වේලාව",
+    "present": "පැමිණි"
+  },
+  "qr": {
+    "title": "මගේ QR කේතය",
+    "download": "QR කේතය බාගන්න",
+    "instructions": "රැස්වීම්වලදී පැමිණීම සටහන් කිරීමට මෙම QR කේතය පෙන්වන්න."
+  },
+  "inbox": {
+    "title": "පණිවිඩ පෙට්ටිය",
+    "empty": "තවම පණිවිඩ නොමැත.",
+    "from": "යවන්නා",
+    "markRead": "කියවූ ලෙස සලකුණු කරන්න"
+  },
+  "members": {
+    "title": "සාමාජික නාමාවලිය",
+    "searchPlaceholder": "නම හෝ විද්‍යුත් තැපෑල අනුව සොයන්න",
+    "viewProfile": "පැතිකඩ බලන්න"
+  },
+  "scanner": {
+    "title": "QR ස්කෑනරය",
+    "selectMeeting": "රැස්වීම තෝරන්න",
+    "startScanning": "ස්කෑන් කිරීම ආරම්භ කරන්න",
+    "stopScanning": "ස්කෑන් කිරීම නවත්වන්න",
+    "scanSuccess": "{{name}} සඳහා පැමිණීම සටහන් විය",
+    "cameraPermission": "QR කේත ස්කෑන් කිරීමට කැමරා ප්‍රවේශය ලබා දෙන්න."
+  },
+  "messages": {
+    "title": "පණිවිඩයක් යවන්න",
+    "recipientType": "ලබන්නාගේ වර්ගය",
+    "individual": "පුද්ගලික",
+    "group": "කණ්ඩායම්",
+    "broadcast": "සියලුම සාමාජිකයින්ට",
+    "selectRecipient": "ලබන්නා තෝරන්න",
+    "subject": "විෂය",
+    "body": "පණිවිඩය",
+    "send": "පණිවිඩය යවන්න",
+    "sent": "පණිවිඩය සාර්ථකව යවන ලදී"
+  },
+  "reports": {
+    "title": "වාර්තා පුවරුව",
+    "totalMembers": "මුළු සාමාජිකයින්",
+    "feeCollection": "වර්ෂය අනුව ගාස්තු එකතුව",
+    "donationsTotal": "මුළු පරිත්‍යාග",
+    "labourHours": "මුළු ශ්‍රම පැය",
+    "meetingAttendance": "රැස්වීම් පැමිණීම"
+  },
+  "executives": {
+    "title": "විධායක කළමනාකරණය",
+    "currentHolders": "වත්මන් විධායක කමිටුව",
+    "auditHistory": "විගණන ඉතිහාසය",
+    "appoint": "පත් කරන්න",
+    "remove": "ඉවත් කරන්න",
+    "vacant": "පුරප්පාඩුයි",
+    "appointTitle": "විධායකයෙකු පත් කරන්න",
+    "removeTitle": "විධායකයෙකු ඉවත් කරන්න",
+    "selectMember": "සාමාජිකයෙකු තෝරන්න",
+    "positions": {
+      "chairman": "සභාපති",
+      "vice_chairman": "උප සභාපති",
+      "secretary": "ලේකම්",
+      "vice_secretary": "උප ලේකම්",
+      "treasurer": "භාණ්ඩාගාරික"
+    },
+    "actionAppointed": "පත් කරන ලදී",
+    "actionRemoved": "ඉවත් කරන ලදී"
+  },
+  "dashboard": {
+    "welcome": "සාදරයෙන් පිළිගනිමු, {{name}}",
+    "quickLinks": "ඉක්මන් සබැඳි"
+  }
+}

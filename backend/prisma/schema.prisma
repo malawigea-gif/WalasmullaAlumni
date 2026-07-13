@@ -1,0 +1,242 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  member
+  executive
+}
+
+enum ExecutivePositionType {
+  chairman
+  vice_chairman
+  secretary
+  vice_secretary
+  treasurer
+}
+
+enum ExecutiveAction {
+  appointed
+  removed
+}
+
+enum ScholarshipResult {
+  passed
+  failed
+  not_applicable
+}
+
+enum RecipientType {
+  individual
+  group
+  broadcast
+}
+
+model Member {
+  id                  String   @id @default(cuid())
+  email               String   @unique
+  phone                String?
+  passwordHash        String   @map("password_hash")
+  role                Role     @default(member)
+  executivePosition   ExecutivePositionType? @map("executive_position")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  profile             MemberProfile?
+  children            Child[]
+  qrCode              QRCode?
+
+  feePayments         FeePayment[]        @relation("MemberFeePayments")
+  donations           Donation[]          @relation("MemberDonations")
+  labourContributions LabourContribution[] @relation("MemberLabourContributions")
+
+  recordedFeePayments         FeePayment[]        @relation("RecordedByFeePayments")
+  recordedDonations           Donation[]          @relation("RecordedByDonations")
+  recordedLabourContributions LabourContribution[] @relation("RecordedByLabourContributions")
+
+  meetingAttendances  MeetingAttendance[] @relation("MemberAttendance")
+  scannedAttendances  MeetingAttendance[] @relation("ScannedByAttendance")
+
+  heldPosition        ExecutivePosition?  @relation("CurrentHolder")
+
+  actorHistory        ExecutiveHistory[]  @relation("ActorHistory")
+  targetHistory       ExecutiveHistory[]  @relation("TargetHistory")
+
+  sentMessages        Message[]           @relation("SentMessages")
+  messageRecipients   MessageRecipient[]  @relation("MessageRecipients")
+
+  @@map("members")
+}
+
+model MemberProfile {
+  id                              String   @id @default(cuid())
+  memberId                        String   @unique @map("member_id")
+  member                          Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  fullName                        String   @map("full_name")
+  nameWithInitials                String   @map("name_with_initials")
+  dateOfBirth                     DateTime? @map("date_of_birth")
+  nicNumber                       String?  @map("nic_number")
+  permanentAddress                String?  @map("permanent_address")
+  currentAddress                  String?  @map("current_address")
+  gramaNiladhariDivision          String?  @map("grama_niladhari_division")
+  divisionalSecretariat           String?  @map("divisional_secretariat")
+  district                        String?
+  schoolPeriodFrom                Int?     @map("school_period_from")
+  schoolPeriodTo                  Int?     @map("school_period_to")
+  academicAchievements            String?  @map("academic_achievements")
+  coCurricularAchievements        String?  @map("co_curricular_achievements")
+  scholarshipExamResult           ScholarshipResult @default(not_applicable) @map("scholarship_exam_result")
+  leadershipRoles                 String?  @map("leadership_roles")
+  extracurricularGroups           String?  @map("extracurricular_groups")
+  olResults                       Json?    @map("ol_results")
+  alResults                       Json?    @map("al_results")
+  higherEducationQualifications   String?  @map("higher_education_qualifications")
+  profilePhotoUrl                 String?  @map("profile_photo_url")
+
+  updatedAt                       DateTime @updatedAt @map("updated_at")
+
+  @@map("member_profiles")
+}
+
+model Child {
+  id          String    @id @default(cuid())
+  memberId    String    @map("member_id")
+  member      Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  name        String
+  dateOfBirth DateTime? @map("date_of_birth")
+
+  @@map("children")
+}
+
+model ExecutivePosition {
+  id              String    @id @default(cuid())
+  position        ExecutivePositionType @unique
+  currentHolderId String?   @unique @map("current_holder_id")
+  currentHolder   Member?   @relation("CurrentHolder", fields: [currentHolderId], references: [id])
+  startDate       DateTime? @map("start_date")
+
+  @@map("executive_positions")
+}
+
+model ExecutiveHistory {
+  id        String          @id @default(cuid())
+  position  ExecutivePositionType
+  actorId   String          @map("actor_id")
+  actor     Member          @relation("ActorHistory", fields: [actorId], references: [id])
+  targetId  String          @map("target_id")
+  target    Member          @relation("TargetHistory", fields: [targetId], references: [id])
+  action    ExecutiveAction
+  reason    String?
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  @@map("executive_history")
+}
+
+model FeePayment {
+  id         String   @id @default(cuid())
+  memberId   String   @map("member_id")
+  member     Member   @relation("MemberFeePayments", fields: [memberId], references: [id], onDelete: Cascade)
+  amount     Decimal  @db.Decimal(10, 2)
+  year       Int
+  paidDate   DateTime @map("paid_date")
+  recordedBy String   @map("recorded_by")
+  recorder   Member   @relation("RecordedByFeePayments", fields: [recordedBy], references: [id])
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("fee_payments")
+}
+
+model Donation {
+  id           String    @id @default(cuid())
+  memberId     String    @map("member_id")
+  member       Member    @relation("MemberDonations", fields: [memberId], references: [id], onDelete: Cascade)
+  description  String
+  amount       Decimal?  @db.Decimal(10, 2)
+  donatedDate  DateTime  @map("donated_date")
+  recordedBy   String    @map("recorded_by")
+  recorder     Member    @relation("RecordedByDonations", fields: [recordedBy], references: [id])
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@map("donations")
+}
+
+model LabourContribution {
+  id          String   @id @default(cuid())
+  memberId    String   @map("member_id")
+  member      Member   @relation("MemberLabourContributions", fields: [memberId], references: [id], onDelete: Cascade)
+  description String
+  date        DateTime
+  hours       Decimal? @db.Decimal(5, 2)
+  recordedBy  String   @map("recorded_by")
+  recorder    Member   @relation("RecordedByLabourContributions", fields: [recordedBy], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("labour_contributions")
+}
+
+model Meeting {
+  id          String   @id @default(cuid())
+  title       String
+  meetingDate DateTime @map("meeting_date")
+  location    String?
+
+  attendances MeetingAttendance[]
+
+  @@map("meetings")
+}
+
+model MeetingAttendance {
+  id         String   @id @default(cuid())
+  meetingId  String   @map("meeting_id")
+  meeting    Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  memberId   String   @map("member_id")
+  member     Member   @relation("MemberAttendance", fields: [memberId], references: [id], onDelete: Cascade)
+  scannedAt  DateTime @default(now()) @map("scanned_at")
+  scannedBy  String   @map("scanned_by")
+  scanner    Member   @relation("ScannedByAttendance", fields: [scannedBy], references: [id])
+
+  @@unique([meetingId, memberId])
+  @@map("meeting_attendance")
+}
+
+model Message {
+  id              String        @id @default(cuid())
+  senderId        String        @map("sender_id")
+  sender          Member        @relation("SentMessages", fields: [senderId], references: [id])
+  recipientType   RecipientType @map("recipient_type")
+  recipientFilter Json?         @map("recipient_filter")
+  subject         String
+  body            String
+  sentAt          DateTime      @default(now()) @map("sent_at")
+
+  recipients      MessageRecipient[]
+
+  @@map("messages")
+}
+
+model MessageRecipient {
+  id        String    @id @default(cuid())
+  messageId String    @map("message_id")
+  message   Message   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  memberId  String    @map("member_id")
+  member    Member    @relation("MessageRecipients", fields: [memberId], references: [id], onDelete: Cascade)
+  readAt    DateTime? @map("read_at")
+
+  @@unique([messageId, memberId])
+  @@map("message_recipients")
+}
+
+model QRCode {
+  id          String   @id @default(cuid())
+  memberId    String   @unique @map("member_id")
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  qrToken     String   @unique @map("qr_token")
+  generatedAt DateTime @default(now()) @map("generated_at")
+
+  @@map("qr_codes")
+}

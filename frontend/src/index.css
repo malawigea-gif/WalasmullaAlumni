@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Noto Sans Sinhala";
+  src: local("Noto Sans Sinhala");
+}
+
+:root {
+  color-scheme: light dark;
+  --chart-surface: #fcfcfb;
+  --chart-series-1: #2a78d6;
+  --chart-text-primary: #0b0b0b;
+  --chart-text-secondary: #52514e;
+  --chart-muted: #898781;
+  --chart-grid: #e1e0d9;
+  --chart-baseline: #c3c2b7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --chart-surface: #1a1a19;
+    --chart-series-1: #3987e5;
+    --chart-text-primary: #ffffff;
+    --chart-text-secondary: #c3c2b7;
+    --chart-muted: #898781;
+    --chart-grid: #2c2c2a;
+    --chart-baseline: #383835;
+  }
+}
+
+body {
+  font-family: "Noto Sans Sinhala", system-ui, "Segoe UI", Roboto, sans-serif;
+}
