@@ -36,7 +36,7 @@ const forgotPasswordSchema = z.object({
   email: z.string().email(),
 });
 
-function issueTokens(member: { id: string; role: "member" | "executive"; executivePosition: any }) {
+function issueTokens(member: { id: string; role: "member" | "executive" | "admin"; executivePosition: any }) {
   const accessToken = signAccessToken({
     sub: member.id,
     role: member.role,
@@ -85,6 +85,10 @@ router.post(
 
     const passwordMatches = await bcrypt.compare(password, member.passwordHash);
     if (!passwordMatches) throw new ApiError(401, "Invalid email or password");
+
+    if (member.deletedAt || member.status === "blocked") {
+      throw new ApiError(403, "This account has been blocked. Please contact an administrator.");
+    }
 
     const tokens = issueTokens(member);
     res.json({ member: toPublicMember(member), ...tokens });

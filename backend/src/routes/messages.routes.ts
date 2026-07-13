@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
-import { authenticate, requireExecutive } from "../middleware/auth";
+import { authenticate, requireElevatedAccess } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
@@ -14,7 +14,7 @@ router.use(authenticate);
 
 router.post(
   "/",
-  requireExecutive,
+  requireElevatedAccess,
   validateBody(sendMessageSchema),
   asyncHandler(async (req, res) => {
     const { subject, body, recipientType, recipientMemberId, recipientFilter } = req.body;
@@ -24,10 +24,11 @@ router.post(
     if (recipientType === "individual") {
       if (!recipientMemberId) throw new ApiError(400, "recipientMemberId is required for individual messages");
       const target = await prisma.member.findUnique({ where: { id: recipientMemberId } });
-      if (!target) throw new ApiError(404, "Recipient member not found");
+      if (!target || target.deletedAt) throw new ApiError(404, "Recipient member not found");
       recipientIds = [recipientMemberId];
     } else if (recipientType === "group") {
       const where: Prisma.MemberWhereInput = {
+        deletedAt: null,
         profile: {
           ...(recipientFilter?.district ? { district: { equals: recipientFilter.district, mode: "insensitive" } } : {}),
           ...(recipientFilter?.gramaNiladhariDivision
@@ -39,7 +40,7 @@ router.post(
       recipientIds = targets.map((m) => m.id);
       if (recipientIds.length === 0) throw new ApiError(400, "No members match the given group filter");
     } else {
-      const targets = await prisma.member.findMany({ select: { id: true } });
+      const targets = await prisma.member.findMany({ where: { deletedAt: null }, select: { id: true } });
       recipientIds = targets.map((m) => m.id);
     }
 

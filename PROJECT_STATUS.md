@@ -49,8 +49,15 @@ No custom domain is configured — the app runs on the free platform subdomains 
 **Auth & accounts**
 - Register / login / logout, JWT access + refresh token flow
 - Forgot-password endpoint (logs a reset request; no email delivery wired up yet)
-- Role-based access control: `member` vs `executive`, enforced on both API
-  routes (middleware) and frontend routes (protected routes)
+- Role-based access control: `member` vs `executive` vs `admin`, enforced on
+  both API routes (middleware) and frontend routes (protected routes). The
+  `authenticate` middleware re-fetches role/status from the DB on every
+  request (not just from the JWT claim), so blocking/deleting an account or
+  revoking a delegation takes effect immediately, without waiting for the
+  access token to expire.
+- Account status: `active` / `blocked` (`Member.status`) and soft-delete
+  (`Member.deletedAt`) — blocked or deleted accounts cannot log in or use an
+  existing token
 
 **Member self-service**
 - Profile view/edit: personal info, address, GN division/DS division/district,
@@ -77,6 +84,29 @@ No custom domain is configured — the app runs on the free platform subdomains 
   auto-removes the previous holder), full audit history (actor, target, action,
   reason, timestamp)
 
+**Admin-only**
+- Admin Dashboard (`/admin`, `frontend/src/pages/admin/AdminDashboardPage.tsx`):
+  member list with block/unblock, soft-delete/restore, and privilege-delegation
+  actions, plus an audit log view
+- Block/unblock any member (`Member.status`); blocked members are rejected at
+  login and their existing access token stops working on the next request
+- Soft-delete/restore any member (`Member.deletedAt`) — related records
+  (payments, donations, attendance, etc.) are never orphaned since the row
+  itself is kept; deleted members are excluded from the normal member
+  directory and messaging recipient lists
+- View/create/edit any member's fee payments, donations, labour contributions,
+  and attendance, and send messages (individual/group/broadcast) — same
+  permission surface as executives, via a shared `requireElevatedAccess` /
+  `requireSelfOrElevated` middleware (`backend/src/middleware/auth.ts`)
+- Temporary Privilege Delegation: grant a plain member temporary
+  executive-level access (`PrivilegeDelegation` table), revoke it at any time
+  (takes effect immediately — no re-login needed). A member with an active
+  delegation sees a banner in the app layout and gains the same elevated
+  permissions as an executive for payments/donations/labour/attendance/
+  messaging, but not admin-only actions (block/delete/delegate)
+- Every block/unblock/delete/restore/delegate/revoke action is written to a
+  generic `AuditLog` table (actor, target, action, reason, timestamp)
+
 ## 5. Architecture Summary
 
 Simple 3-tier architecture:
@@ -101,6 +131,10 @@ React SPA (Vercel)  →  Express API (Render)  →  PostgreSQL (Supabase)
 - `Meeting`, `MeetingAttendance` — meetings and who attended (via QR scan)
 - `Message`, `MessageRecipient` — messages and per-recipient read status
 - `QRCode` — one unique QR token per member
+- `PrivilegeDelegation` — temporary executive-level access grants (member,
+  granted-by admin, granted-at, revoked-at, is-active)
+- `AuditLog` — generic actor/target/action/reason/timestamp log for admin
+  actions (block, unblock, delete, restore, delegation grant/revoke)
 
 ## 6. Deployment Notes
 
@@ -189,7 +223,7 @@ cd backend
 npm install
 cp .env.example .env   # fill in DATABASE_URL / DIRECT_URL (a local Postgres works fine) + generate your own JWT secrets
 npm run prisma:migrate
-npm run seed            # optional: creates sample executives + members, password "Password@123"
+npm run seed            # optional: creates 1 admin + sample executives + members, password "Password@123"
 npm run dev              # http://localhost:4000
 
 # Frontend (separate terminal)

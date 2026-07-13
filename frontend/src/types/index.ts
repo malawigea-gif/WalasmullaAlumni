@@ -1,6 +1,14 @@
-export type Role = "member" | "executive";
+export type Role = "member" | "executive" | "admin";
+export type MemberStatus = "active" | "blocked";
 export type ExecutivePositionType = "chairman" | "vice_chairman" | "secretary" | "vice_secretary" | "treasurer";
 export type ScholarshipResult = "passed" | "failed" | "not_applicable";
+export type AuditAction =
+  | "member_blocked"
+  | "member_unblocked"
+  | "member_deleted"
+  | "member_restored"
+  | "delegation_granted"
+  | "delegation_revoked";
 
 export interface Child {
   id: string;
@@ -40,9 +48,35 @@ export interface Member {
   phone: string | null;
   role: Role;
   executivePosition: ExecutivePositionType | null;
+  status: MemberStatus;
+  deletedAt: string | null;
   createdAt: string;
   profile?: MemberProfile | null;
   children?: Child[];
+  /** Only populated on the /profile/me response. */
+  activeDelegation?: { id: string; grantedAt: string; grantedBy: string } | null;
+}
+
+export interface PrivilegeDelegation {
+  id: string;
+  memberId: string;
+  member: Member;
+  grantedBy: string;
+  granter: Member;
+  grantedAt: string;
+  revokedAt: string | null;
+  isActive: boolean;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  actorId: string;
+  actor: Member;
+  targetId: string;
+  target: Member;
+  action: AuditAction;
+  reason: string | null;
+  createdAt: string;
 }
 
 export interface FeePayment {

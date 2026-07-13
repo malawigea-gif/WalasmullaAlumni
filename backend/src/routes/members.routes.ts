@@ -2,7 +2,7 @@ import { Router } from "express";
 import QRCode from "qrcode";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
-import { authenticate, requireExecutive, requireSelfOrExecutive } from "../middleware/auth";
+import { authenticate, requireElevatedAccess, requireSelfOrElevated } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
@@ -21,7 +21,7 @@ router.use(authenticate);
 
 router.get(
   "/",
-  requireExecutive,
+  requireElevatedAccess,
   asyncHandler(async (req, res) => {
     const { q, district, gramaNiladhariDivision, page = "1", pageSize = "20" } = req.query as Record<string, string>;
 
@@ -29,6 +29,7 @@ router.get(
     const pageSizeNum = Math.min(100, Math.max(1, Number(pageSize) || 20));
 
     const where: Prisma.MemberWhereInput = {
+      deletedAt: null,
       AND: [
         q
           ? {
@@ -66,7 +67,7 @@ router.get(
 
 router.get(
   "/:id",
-  requireSelfOrExecutive(),
+  requireSelfOrElevated(),
   asyncHandler(async (req, res) => {
     const member = await prisma.member.findUnique({
       where: { id: req.params.id },
@@ -79,7 +80,7 @@ router.get(
 
 router.put(
   "/:id",
-  requireSelfOrExecutive(),
+  requireSelfOrElevated(),
   validateBody(profileUpdateSchema),
   asyncHandler(async (req, res) => {
     const { phone, ...profileFields } = req.body;
@@ -103,7 +104,7 @@ router.put(
 
 router.post(
   "/:id/children",
-  requireSelfOrExecutive(),
+  requireSelfOrElevated(),
   validateBody(childSchema),
   asyncHandler(async (req, res) => {
     const child = await prisma.child.create({
@@ -115,7 +116,7 @@ router.post(
 
 router.delete(
   "/:id/children/:childId",
-  requireSelfOrExecutive(),
+  requireSelfOrElevated(),
   asyncHandler(async (req, res) => {
     const child = await prisma.child.findUnique({ where: { id: req.params.childId } });
     if (!child || child.memberId !== req.params.id) throw new ApiError(404, "Child not found");
@@ -126,7 +127,7 @@ router.delete(
 
 router.get(
   "/:id/fee-payments",
-  requireSelfOrExecutive(),
+  requireSelfOrElevated(),
   asyncHandler(async (req, res) => {
     const payments = await prisma.feePayment.findMany({
       where: { memberId: req.params.id },
@@ -138,7 +139,7 @@ router.get(
 
 router.post(
   "/:id/fee-payments",
-  requireSelfOrExecutive(),
+  requireSelfOrElevated(),
   validateBody(feePaymentSchema),
   asyncHandler(async (req, res) => {
     const payment = await prisma.feePayment.create({
@@ -156,7 +157,7 @@ router.post(
 
 router.get(
   "/:id/donations",
-  requireSelfOrExecutive(),
+  requireSelfOrElevated(),
   asyncHandler(async (req, res) => {
     const donations = await prisma.donation.findMany({
       where: { memberId: req.params.id },
@@ -168,7 +169,7 @@ router.get(
 
 router.post(
   "/:id/donations",
-  requireSelfOrExecutive(),
+  requireSelfOrElevated(),
   validateBody(donationSchema),
   asyncHandler(async (req, res) => {
     const donation = await prisma.donation.create({
@@ -186,7 +187,7 @@ router.post(
 
 router.get(
   "/:id/labour-contributions",
-  requireSelfOrExecutive(),
+  requireSelfOrElevated(),
   asyncHandler(async (req, res) => {
     const contributions = await prisma.labourContribution.findMany({
       where: { memberId: req.params.id },
@@ -198,7 +199,7 @@ router.get(
 
 router.post(
   "/:id/labour-contributions",
-  requireSelfOrExecutive(),
+  requireSelfOrElevated(),
   validateBody(labourContributionSchema),
   asyncHandler(async (req, res) => {
     const contribution = await prisma.labourContribution.create({
@@ -216,7 +217,7 @@ router.post(
 
 router.get(
   "/:id/attendance",
-  requireSelfOrExecutive(),
+  requireSelfOrElevated(),
   asyncHandler(async (req, res) => {
     const attendance = await prisma.meetingAttendance.findMany({
       where: { memberId: req.params.id },
@@ -229,7 +230,7 @@ router.get(
 
 router.get(
   "/:id/qr-code",
-  requireSelfOrExecutive(),
+  requireSelfOrElevated(),
   asyncHandler(async (req, res) => {
     const qr = await prisma.qRCode.findUnique({ where: { memberId: req.params.id } });
     if (!qr) throw new ApiError(404, "QR code not found for this member");

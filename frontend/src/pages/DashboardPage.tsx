@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 
 export default function DashboardPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isElevated } = useAuth();
 
   const links = [
     { to: "/profile", key: "profile" },
@@ -14,7 +14,7 @@ export default function DashboardPage() {
     { to: "/attendance", key: "attendance" },
     { to: "/qr-code", key: "qrCode" },
     { to: "/inbox", key: "inbox" },
-    ...(user?.role === "executive"
+    ...(isElevated
       ? [
           { to: "/members", key: "members" },
           { to: "/scanner", key: "scanner" },
@@ -23,6 +23,7 @@ export default function DashboardPage() {
           { to: "/executives", key: "executives" },
         ]
       : []),
+    ...(user?.role === "admin" ? [{ to: "/admin", key: "admin" }] : []),
   ] as const;
 
   return (

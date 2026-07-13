@@ -20,6 +20,7 @@ import ScannerPage from "./pages/executive/ScannerPage";
 import SendMessagePage from "./pages/executive/SendMessagePage";
 import ReportsPage from "./pages/executive/ReportsPage";
 import ExecutivesPage from "./pages/executive/ExecutivesPage";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 
 export default function App() {
   return (
@@ -46,6 +47,10 @@ export default function App() {
             <Route path="/send-message" element={<SendMessagePage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/executives" element={<ExecutivesPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute adminOnly />}>
+            <Route path="/admin" element={<AdminDashboardPage />} />
           </Route>
         </Route>
       </Route>

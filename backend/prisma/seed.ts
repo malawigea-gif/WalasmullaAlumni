@@ -20,6 +20,28 @@ const MEMBERS = [
 async function main() {
   const defaultPasswordHash = await bcrypt.hash("Password@123", 10);
 
+  await prisma.member.upsert({
+    where: { email: "admin@walasmulla-alumni.lk" },
+    update: {},
+    create: {
+      email: "admin@walasmulla-alumni.lk",
+      phone: "0770000000",
+      passwordHash: defaultPasswordHash,
+      role: "admin",
+      profile: {
+        create: {
+          fullName: "පද්ම විජේසිංහ",
+          nameWithInitials: "පද්ම විජේසිංහ",
+          district: "Hambantota",
+          scholarshipExamResult: "not_applicable",
+        },
+      },
+      qrCode: {
+        create: { qrToken: `qr_admin_${Date.now()}` },
+      },
+    },
+  });
+
   const executiveMembers = [];
   for (const exec of EXECUTIVES) {
     const member = await prisma.member.upsert({

@@ -14,6 +14,7 @@
     "sendMessage": "පණිවිඩයක් යවන්න",
     "reports": "වාර්තා",
     "executives": "විධායක කළමනාකරණය",
+    "admin": "පරිපාලක පුවරුව",
     "logout": "ඉවත් වන්න"
   },
   "auth": {
@@ -173,5 +174,41 @@
   "dashboard": {
     "welcome": "සාදරයෙන් පිළිගනිමු, {{name}}",
     "quickLinks": "ඉක්මන් සබැඳි"
+  },
+  "delegation": {
+    "activeBanner": "පරිපාලකයෙකු විසින් ඔබට තාවකාලික විධායක මට්ටමේ ප්‍රවේශයක් ලබා දී ඇත."
+  },
+  "admin": {
+    "title": "පරිපාලක පුවරුව",
+    "members": "සාමාජිකයින්",
+    "role": "භූමිකාව",
+    "status": "තත්ත්වය",
+    "delegation": "බලය පැවරීම",
+    "delegated": "පවරා ඇත",
+    "active": "සක්‍රීයයි",
+    "blocked": "අවහිර කර ඇත",
+    "deleted": "මකා ඇත",
+    "block": "අවහිර කරන්න",
+    "unblock": "අවහිර ඉවත් කරන්න",
+    "delegate": "බලය පවරන්න",
+    "revokeDelegation": "බලය අහෝසි කරන්න",
+    "restore": "යළි ස්ථාපනය කරන්න",
+    "auditLog": "විගණන සටහන",
+    "action": "ක්‍රියාව",
+    "actor": "සිදු කළේ",
+    "target": "ඉලක්ක සාමාජිකයා",
+    "roles": {
+      "member": "සාමාජික",
+      "executive": "විධායක",
+      "admin": "පරිපාලක"
+    },
+    "actions": {
+      "member_blocked": "අවහිර කරන ලදී",
+      "member_unblocked": "අවහිර ඉවත් කරන ලදී",
+      "member_deleted": "මකන ලදී",
+      "member_restored": "යළි ස්ථාපනය කරන ලදී",
+      "delegation_granted": "බලය පවරන ලදී",
+      "delegation_revoked": "බලය අහෝසි කරන ලදී"
+    }
   }
 }

@@ -23,7 +23,7 @@ const executiveLinks = [
 
 export function Layout() {
   const { t, i18n } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user, logout, isElevated } = useAuth();
 
   function toggleLanguage() {
     i18n.changeLanguage(i18n.language === "si" ? "en" : "si");
@@ -67,7 +67,7 @@ export function Layout() {
               {t(`nav.${link.key}`)}
             </NavLink>
           ))}
-          {user?.role === "executive" && (
+          {isElevated && (
             <>
               <div className="mt-2 border-t border-slate-200 pt-2 dark:border-slate-800" />
               {executiveLinks.map((link) => (
@@ -77,9 +77,22 @@ export function Layout() {
               ))}
             </>
           )}
+          {user?.role === "admin" && (
+            <>
+              <div className="mt-2 border-t border-slate-200 pt-2 dark:border-slate-800" />
+              <NavLink to="/admin" className={navLinkClass}>
+                {t("nav.admin")}
+              </NavLink>
+            </>
+          )}
         </nav>
 
         <main className="min-w-0 flex-1 rounded-lg bg-white p-4 shadow-sm dark:bg-slate-900">
+          {user?.role === "member" && user.activeDelegation && (
+            <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300">
+              {t("delegation.activeBanner")}
+            </div>
+          )}
           <Outlet />
         </main>
       </div>

@@ -14,6 +14,7 @@
     "sendMessage": "Send Message",
     "reports": "Reports",
     "executives": "Executive Management",
+    "admin": "Admin Dashboard",
     "logout": "Logout"
   },
   "auth": {
@@ -173,5 +174,41 @@
   "dashboard": {
     "welcome": "Welcome, {{name}}",
     "quickLinks": "Quick Links"
+  },
+  "delegation": {
+    "activeBanner": "You have been granted temporary executive-level access by an administrator."
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "members": "Members",
+    "role": "Role",
+    "status": "Status",
+    "delegation": "Delegation",
+    "delegated": "Delegated",
+    "active": "Active",
+    "blocked": "Blocked",
+    "deleted": "Deleted",
+    "block": "Block",
+    "unblock": "Unblock",
+    "delegate": "Grant Delegation",
+    "revokeDelegation": "Revoke Delegation",
+    "restore": "Restore",
+    "auditLog": "Audit Log",
+    "action": "Action",
+    "actor": "Performed By",
+    "target": "Target Member",
+    "roles": {
+      "member": "Member",
+      "executive": "Executive",
+      "admin": "Admin"
+    },
+    "actions": {
+      "member_blocked": "Blocked",
+      "member_unblocked": "Unblocked",
+      "member_deleted": "Deleted",
+      "member_restored": "Restored",
+      "delegation_granted": "Delegation Granted",
+      "delegation_revoked": "Delegation Revoked"
+    }
   }
 }

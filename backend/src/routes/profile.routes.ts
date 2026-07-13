@@ -20,7 +20,13 @@ router.get(
       include: { profile: true, children: true },
     });
     if (!member) throw new ApiError(404, "Member not found");
-    res.json(toPublicMember(member));
+
+    const activeDelegation = await prisma.privilegeDelegation.findFirst({
+      where: { memberId: req.user!.id, isActive: true },
+      select: { id: true, grantedAt: true, grantedBy: true },
+    });
+
+    res.json({ ...toPublicMember(member), activeDelegation: activeDelegation ?? null });
   })
 );
 

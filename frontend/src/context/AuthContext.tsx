@@ -6,6 +6,8 @@ import type { Member } from "../types";
 interface AuthContextValue {
   user: Member | null;
   loading: boolean;
+  /** True for executives, admins, and members with an active privilege delegation. */
+  isElevated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: {
     email: string;
@@ -47,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(email: string, password: string) {
     const { data } = await api.post("/auth/login", { email, password });
     tokenStore.setTokens(data.accessToken, data.refreshToken);
-    setUser(data.member);
+    await refreshUser();
   }
 
   async function register(payload: {
@@ -59,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }) {
     const { data } = await api.post("/auth/register", payload);
     tokenStore.setTokens(data.accessToken, data.refreshToken);
-    setUser(data.member);
+    await refreshUser();
   }
 
   function logout() {
@@ -68,8 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.post("/auth/logout").catch(() => {});
   }
 
+  const isElevated = user ? user.role === "executive" || user.role === "admin" || !!user.activeDelegation : false;
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, isElevated, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
