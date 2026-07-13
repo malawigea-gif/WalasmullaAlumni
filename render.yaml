@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: walasmulla-alumni-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    preDeployCommand: npm run prisma:migrate:deploy
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: UPLOAD_DIR
+        value: uploads
