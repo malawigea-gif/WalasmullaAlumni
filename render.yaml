@@ -4,9 +4,8 @@ services:
     runtime: node
     rootDir: backend
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy && npm run build
     startCommand: npm start
-    preDeployCommand: npm run prisma:migrate:deploy
     healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
