@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
+import { ConfirmationBadge } from "../components/ConfirmationBadge";
 import type { Donation } from "../types";
 
 export default function DonationsPage() {
@@ -74,6 +75,7 @@ export default function DonationsPage() {
               <th className="py-2">{t("common.description")}</th>
               <th className="py-2">{t("common.amount")}</th>
               <th className="py-2">{t("donations.donatedDate")}</th>
+              <th className="py-2">{t("common.status")}</th>
             </tr>
           </thead>
           <tbody>
@@ -82,6 +84,9 @@ export default function DonationsPage() {
                 <td className="py-2">{d.description}</td>
                 <td className="py-2">{d.amount ? `Rs. ${d.amount}` : "-"}</td>
                 <td className="py-2">{new Date(d.donatedDate).toLocaleDateString()}</td>
+                <td className="py-2">
+                  <ConfirmationBadge confirmedAt={d.confirmedAt} />
+                </td>
               </tr>
             ))}
           </tbody>

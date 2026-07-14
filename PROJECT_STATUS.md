@@ -1,6 +1,6 @@
 # Project Status Report — Walasmulla Alumni Association Management System
 
-_Last updated: 2026-07-13_
+_Last updated: 2026-07-14_
 
 This document is a reference for future updates/handoff. It captures what exists, where it's deployed, and what's left to do.
 
@@ -74,6 +74,15 @@ No custom domain is configured — the app runs on the free platform subdomains 
 - Record a fee payment / donation / labour contribution on behalf of any member
 - QR Scanner page (camera-based, via html5-qrcode): select a meeting, scan a
   member's QR code, record attendance (duplicate-scan protected)
+- Confirmation workflow: executives, admins, and delegated members can confirm
+  a member's fee payment, donation, labour contribution, or meeting attendance
+  from that member's profile page. Each of the four records carries
+  `confirmedBy` (FK to the confirming Member) and `confirmedAt` (timestamp) —
+  a record is "confirmed" only once both are set. `PATCH
+  /members/:id/{fee-payments,donations,labour-contributions,attendance}/:recordId/confirm`
+  (`requireElevatedAccess`; 409 if already confirmed). Plain members see a
+  read-only Confirmed/Pending badge on their own records but cannot confirm
+  anything, including their own.
 - Send Message: individual (search + pick a member), group (filter by district /
   grama niladhari division), or broadcast (all members)
 - Reports dashboard: total members, fee collection by year (chart), total
@@ -127,8 +136,12 @@ React SPA (Vercel)  →  Express API (Render)  →  PostgreSQL (Supabase)
 - `Child` — one-to-many, a member's children
 - `ExecutivePosition` — the 5 fixed positions and their current holder
 - `ExecutiveHistory` — append-only audit log of appoint/remove actions
-- `FeePayment`, `Donation`, `LabourContribution` — per-member financial/contribution records
-- `Meeting`, `MeetingAttendance` — meetings and who attended (via QR scan)
+- `FeePayment`, `Donation`, `LabourContribution` — per-member financial/contribution
+  records; each has `recordedBy` (who logged it) plus `confirmedBy`/`confirmedAt`
+  (who verified it, and when — null until an executive/admin/delegated member confirms)
+- `Meeting`, `MeetingAttendance` — meetings and who attended (via QR scan);
+  `MeetingAttendance` also carries `confirmedBy`/`confirmedAt` for the same
+  confirmation workflow
 - `Message`, `MessageRecipient` — messages and per-recipient read status
 - `QRCode` — one unique QR token per member
 - `PrivilegeDelegation` — temporary executive-level access grants (member,
@@ -167,6 +180,24 @@ Frontend (Vercel):
 - `VITE_API_BASE_URL` — absolute URL of the backend API (`https://walasmulla-alumni-backend.onrender.com/api`)
 
 Important gotcha found during setup: Supabase's **direct connection host** (`db.<ref>.supabase.co:5432`) is IPv6-only and wasn't reachable from this environment or reliably from Render — use the **session pooler** (`aws-<region>.pooler.supabase.com:5432`, same username format `postgres.<project-ref>`) as `DIRECT_URL` instead.
+
+## 6a. Access-Control Verification (2026-07-14)
+
+Verified end-to-end (live requests against a running dev server) that plain
+members without an active delegation are rejected (403) from: viewing another
+member's profile/history, recording or confirming another member's
+fee/donation/labour/attendance record, browsing the member directory, and
+sending any message (individual or broadcast) — all enforced by
+`requireElevatedAccess` / `requireSelfOrElevated` in
+`backend/src/middleware/auth.ts`, not just hidden in the UI. Also confirmed
+delegation grant/revoke takes effect immediately (no re-login needed).
+
+While verifying this, found and fixed a bug: `POST /meetings/:id/attendance/scan`
+was gated with `requireExecutive` (executive role only), which silently
+excluded admins and delegated members even though this doc already documented
+delegation as granting "the same elevated permissions as an executive for
+payments/donations/labour/attendance/messaging." Changed to
+`requireElevatedAccess` in `backend/src/routes/meetings.routes.ts` to match.
 
 ## 7. Known Limitations
 

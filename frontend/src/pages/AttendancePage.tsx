@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
+import { ConfirmationBadge } from "../components/ConfirmationBadge";
 import type { MeetingAttendance } from "../types";
 
 export default function AttendancePage() {
@@ -31,6 +32,7 @@ export default function AttendancePage() {
             <tr className="border-b border-slate-200 dark:border-slate-800">
               <th className="py-2">{t("attendance.meeting")}</th>
               <th className="py-2">{t("attendance.scannedAt")}</th>
+              <th className="py-2">{t("common.status")}</th>
             </tr>
           </thead>
           <tbody>
@@ -38,6 +40,9 @@ export default function AttendancePage() {
               <tr key={a.id} className="border-b border-slate-100 dark:border-slate-800/50">
                 <td className="py-2">{a.meeting?.title}</td>
                 <td className="py-2">{new Date(a.scannedAt).toLocaleString()}</td>
+                <td className="py-2">
+                  <ConfirmationBadge confirmedAt={a.confirmedAt} />
+                </td>
               </tr>
             ))}
           </tbody>

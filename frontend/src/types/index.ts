@@ -86,6 +86,8 @@ export interface FeePayment {
   year: number;
   paidDate: string;
   recordedBy: string;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
   createdAt: string;
 }
 
@@ -96,6 +98,8 @@ export interface Donation {
   amount: string | null;
   donatedDate: string;
   recordedBy: string;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
   createdAt: string;
 }
 
@@ -106,6 +110,8 @@ export interface LabourContribution {
   date: string;
   hours: string | null;
   recordedBy: string;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
   createdAt: string;
 }
 
@@ -123,6 +129,8 @@ export interface MeetingAttendance {
   memberId: string;
   scannedAt: string;
   scannedBy: string;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
   meeting?: Meeting;
 }
 

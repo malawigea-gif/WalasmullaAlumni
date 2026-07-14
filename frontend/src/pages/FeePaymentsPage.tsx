@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
+import { ConfirmationBadge } from "../components/ConfirmationBadge";
 import type { FeePayment } from "../types";
 
 export default function FeePaymentsPage() {
@@ -72,6 +73,7 @@ export default function FeePaymentsPage() {
               <th className="py-2">{t("common.year")}</th>
               <th className="py-2">{t("common.amount")}</th>
               <th className="py-2">{t("fees.paidDate")}</th>
+              <th className="py-2">{t("common.status")}</th>
             </tr>
           </thead>
           <tbody>
@@ -80,6 +82,9 @@ export default function FeePaymentsPage() {
                 <td className="py-2">{p.year}</td>
                 <td className="py-2">Rs. {p.amount}</td>
                 <td className="py-2">{new Date(p.paidDate).toLocaleDateString()}</td>
+                <td className="py-2">
+                  <ConfirmationBadge confirmedAt={p.confirmedAt} />
+                </td>
               </tr>
             ))}
           </tbody>

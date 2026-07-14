@@ -82,6 +82,11 @@ model Member {
   recordedDonations           Donation[]          @relation("RecordedByDonations")
   recordedLabourContributions LabourContribution[] @relation("RecordedByLabourContributions")
 
+  confirmedFeePayments         FeePayment[]        @relation("ConfirmedByFeePayments")
+  confirmedDonations           Donation[]          @relation("ConfirmedByDonations")
+  confirmedLabourContributions LabourContribution[] @relation("ConfirmedByLabourContributions")
+  confirmedAttendances         MeetingAttendance[] @relation("ConfirmedByAttendance")
+
   meetingAttendances  MeetingAttendance[] @relation("MemberAttendance")
   scannedAttendances  MeetingAttendance[] @relation("ScannedByAttendance")
 
@@ -162,43 +167,52 @@ model ExecutiveHistory {
 }
 
 model FeePayment {
-  id         String   @id @default(cuid())
-  memberId   String   @map("member_id")
-  member     Member   @relation("MemberFeePayments", fields: [memberId], references: [id], onDelete: Cascade)
-  amount     Decimal  @db.Decimal(10, 2)
-  year       Int
-  paidDate   DateTime @map("paid_date")
-  recordedBy String   @map("recorded_by")
-  recorder   Member   @relation("RecordedByFeePayments", fields: [recordedBy], references: [id])
-  createdAt  DateTime @default(now()) @map("created_at")
+  id          String    @id @default(cuid())
+  memberId    String    @map("member_id")
+  member      Member    @relation("MemberFeePayments", fields: [memberId], references: [id], onDelete: Cascade)
+  amount      Decimal   @db.Decimal(10, 2)
+  year        Int
+  paidDate    DateTime  @map("paid_date")
+  recordedBy  String    @map("recorded_by")
+  recorder    Member    @relation("RecordedByFeePayments", fields: [recordedBy], references: [id])
+  confirmedBy String?   @map("confirmed_by")
+  confirmer   Member?   @relation("ConfirmedByFeePayments", fields: [confirmedBy], references: [id])
+  confirmedAt DateTime? @map("confirmed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   @@map("fee_payments")
 }
 
 model Donation {
-  id           String    @id @default(cuid())
-  memberId     String    @map("member_id")
-  member       Member    @relation("MemberDonations", fields: [memberId], references: [id], onDelete: Cascade)
-  description  String
-  amount       Decimal?  @db.Decimal(10, 2)
-  donatedDate  DateTime  @map("donated_date")
-  recordedBy   String    @map("recorded_by")
-  recorder     Member    @relation("RecordedByDonations", fields: [recordedBy], references: [id])
-  createdAt    DateTime  @default(now()) @map("created_at")
+  id          String    @id @default(cuid())
+  memberId    String    @map("member_id")
+  member      Member    @relation("MemberDonations", fields: [memberId], references: [id], onDelete: Cascade)
+  description String
+  amount      Decimal?  @db.Decimal(10, 2)
+  donatedDate DateTime  @map("donated_date")
+  recordedBy  String    @map("recorded_by")
+  recorder    Member    @relation("RecordedByDonations", fields: [recordedBy], references: [id])
+  confirmedBy String?   @map("confirmed_by")
+  confirmer   Member?   @relation("ConfirmedByDonations", fields: [confirmedBy], references: [id])
+  confirmedAt DateTime? @map("confirmed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   @@map("donations")
 }
 
 model LabourContribution {
-  id          String   @id @default(cuid())
-  memberId    String   @map("member_id")
-  member      Member   @relation("MemberLabourContributions", fields: [memberId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  memberId    String    @map("member_id")
+  member      Member    @relation("MemberLabourContributions", fields: [memberId], references: [id], onDelete: Cascade)
   description String
   date        DateTime
-  hours       Decimal? @db.Decimal(5, 2)
-  recordedBy  String   @map("recorded_by")
-  recorder    Member   @relation("RecordedByLabourContributions", fields: [recordedBy], references: [id])
-  createdAt   DateTime @default(now()) @map("created_at")
+  hours       Decimal?  @db.Decimal(5, 2)
+  recordedBy  String    @map("recorded_by")
+  recorder    Member    @relation("RecordedByLabourContributions", fields: [recordedBy], references: [id])
+  confirmedBy String?   @map("confirmed_by")
+  confirmer   Member?   @relation("ConfirmedByLabourContributions", fields: [confirmedBy], references: [id])
+  confirmedAt DateTime? @map("confirmed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   @@map("labour_contributions")
 }
@@ -215,14 +229,17 @@ model Meeting {
 }
 
 model MeetingAttendance {
-  id         String   @id @default(cuid())
-  meetingId  String   @map("meeting_id")
-  meeting    Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  memberId   String   @map("member_id")
-  member     Member   @relation("MemberAttendance", fields: [memberId], references: [id], onDelete: Cascade)
-  scannedAt  DateTime @default(now()) @map("scanned_at")
-  scannedBy  String   @map("scanned_by")
-  scanner    Member   @relation("ScannedByAttendance", fields: [scannedBy], references: [id])
+  id          String    @id @default(cuid())
+  meetingId   String    @map("meeting_id")
+  meeting     Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  memberId    String    @map("member_id")
+  member      Member    @relation("MemberAttendance", fields: [memberId], references: [id], onDelete: Cascade)
+  scannedAt   DateTime  @default(now()) @map("scanned_at")
+  scannedBy   String    @map("scanned_by")
+  scanner     Member    @relation("ScannedByAttendance", fields: [scannedBy], references: [id])
+  confirmedBy String?   @map("confirmed_by")
+  confirmer   Member?   @relation("ConfirmedByAttendance", fields: [confirmedBy], references: [id])
+  confirmedAt DateTime? @map("confirmed_at")
 
   @@unique([meetingId, memberId])
   @@map("meeting_attendance")

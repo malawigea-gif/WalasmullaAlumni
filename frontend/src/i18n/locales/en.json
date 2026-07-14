@@ -56,7 +56,10 @@
     "viewAll": "View All",
     "none": "None",
     "reason": "Reason",
+    "status": "Status",
     "confirm": "Confirm",
+    "confirmed": "Confirmed",
+    "pending": "Pending Confirmation",
     "from": "From",
     "to": "To"
   },

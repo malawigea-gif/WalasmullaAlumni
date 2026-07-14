@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
-import { authenticate, requireExecutive } from "../middleware/auth";
+import { authenticate, requireElevatedAccess, requireExecutive } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
@@ -34,7 +34,7 @@ router.post(
 
 router.post(
   "/:id/attendance/scan",
-  requireExecutive,
+  requireElevatedAccess,
   validateBody(scanAttendanceSchema),
   asyncHandler(async (req, res) => {
     const meeting = await prisma.meeting.findUnique({ where: { id: req.params.id } });

@@ -2,7 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { api } from "../../lib/api";
-import type { Donation, FeePayment, LabourContribution, Member } from "../../types";
+import { ConfirmationBadge } from "../../components/ConfirmationBadge";
+import type { Donation, FeePayment, LabourContribution, MeetingAttendance, Member } from "../../types";
 
 export default function MemberDetailPage() {
   const { t } = useTranslation();
@@ -11,6 +12,7 @@ export default function MemberDetailPage() {
   const [payments, setPayments] = useState<FeePayment[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
   const [contributions, setContributions] = useState<LabourContribution[]>([]);
+  const [attendance, setAttendance] = useState<MeetingAttendance[]>([]);
 
   const [profileForm, setProfileForm] = useState({ fullName: "", nameWithInitials: "", district: "", phone: "" });
   const [feeForm, setFeeForm] = useState({ amount: "", year: new Date().getFullYear().toString() });
@@ -20,11 +22,12 @@ export default function MemberDetailPage() {
 
   async function loadAll() {
     if (!id) return;
-    const [memberRes, feesRes, donationsRes, labourRes] = await Promise.all([
+    const [memberRes, feesRes, donationsRes, labourRes, attendanceRes] = await Promise.all([
       api.get(`/members/${id}`),
       api.get(`/members/${id}/fee-payments`),
       api.get(`/members/${id}/donations`),
       api.get(`/members/${id}/labour-contributions`),
+      api.get(`/members/${id}/attendance`),
     ]);
     setMember(memberRes.data);
     setProfileForm({
@@ -36,6 +39,7 @@ export default function MemberDetailPage() {
     setPayments(feesRes.data);
     setDonations(donationsRes.data);
     setContributions(labourRes.data);
+    setAttendance(attendanceRes.data);
   }
 
   useEffect(() => {
@@ -78,6 +82,30 @@ export default function MemberDetailPage() {
       hours: labourForm.hours ? Number(labourForm.hours) : undefined,
     });
     setLabourForm({ description: "", hours: "" });
+    await loadAll();
+  }
+
+  async function handleConfirmFee(paymentId: string) {
+    if (!id) return;
+    await api.patch(`/members/${id}/fee-payments/${paymentId}/confirm`);
+    await loadAll();
+  }
+
+  async function handleConfirmDonation(donationId: string) {
+    if (!id) return;
+    await api.patch(`/members/${id}/donations/${donationId}/confirm`);
+    await loadAll();
+  }
+
+  async function handleConfirmLabour(contributionId: string) {
+    if (!id) return;
+    await api.patch(`/members/${id}/labour-contributions/${contributionId}/confirm`);
+    await loadAll();
+  }
+
+  async function handleConfirmAttendance(attendanceId: string) {
+    if (!id) return;
+    await api.patch(`/members/${id}/attendance/${attendanceId}/confirm`);
     await loadAll();
   }
 
@@ -149,6 +177,10 @@ export default function MemberDetailPage() {
             { header: t("common.year"), render: (p) => p.year },
             { header: t("common.amount"), render: (p) => `Rs. ${p.amount}` },
             { header: t("fees.paidDate"), render: (p) => new Date(p.paidDate).toLocaleDateString() },
+            {
+              header: t("common.status"),
+              render: (p) => <ConfirmCell confirmedAt={p.confirmedAt} onConfirm={() => handleConfirmFee(p.id)} />,
+            },
           ]}
         />
       </section>
@@ -178,6 +210,10 @@ export default function MemberDetailPage() {
             { header: t("common.description"), render: (d) => d.description },
             { header: t("common.amount"), render: (d) => (d.amount ? `Rs. ${d.amount}` : "-") },
             { header: t("donations.donatedDate"), render: (d) => new Date(d.donatedDate).toLocaleDateString() },
+            {
+              header: t("common.status"),
+              render: (d) => <ConfirmCell confirmedAt={d.confirmedAt} onConfirm={() => handleConfirmDonation(d.id)} />,
+            },
           ]}
         />
       </section>
@@ -207,10 +243,43 @@ export default function MemberDetailPage() {
             { header: t("common.description"), render: (c) => c.description },
             { header: t("labour.hours"), render: (c) => c.hours ?? "-" },
             { header: t("common.date"), render: (c) => new Date(c.date).toLocaleDateString() },
+            {
+              header: t("common.status"),
+              render: (c) => <ConfirmCell confirmedAt={c.confirmedAt} onConfirm={() => handleConfirmLabour(c.id)} />,
+            },
+          ]}
+        />
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-lg font-semibold">{t("attendance.title")}</h2>
+        <SimpleTable
+          rows={attendance}
+          columns={[
+            { header: t("attendance.meeting"), render: (a) => a.meeting?.title ?? "-" },
+            { header: t("attendance.scannedAt"), render: (a) => new Date(a.scannedAt).toLocaleString() },
+            {
+              header: t("common.status"),
+              render: (a) => <ConfirmCell confirmedAt={a.confirmedAt} onConfirm={() => handleConfirmAttendance(a.id)} />,
+            },
           ]}
         />
       </section>
     </div>
+  );
+}
+
+function ConfirmCell({ confirmedAt, onConfirm }: { confirmedAt: string | null; onConfirm: () => void }) {
+  const { t } = useTranslation();
+  if (confirmedAt) return <ConfirmationBadge confirmedAt={confirmedAt} />;
+  return (
+    <button
+      type="button"
+      onClick={onConfirm}
+      className="rounded-md bg-amber-600 px-2 py-1 text-xs font-medium text-white hover:bg-amber-700"
+    >
+      {t("common.confirm")}
+    </button>
   );
 }
 

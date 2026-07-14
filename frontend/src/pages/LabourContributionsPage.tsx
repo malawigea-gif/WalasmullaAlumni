@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
+import { ConfirmationBadge } from "../components/ConfirmationBadge";
 import type { LabourContribution } from "../types";
 
 export default function LabourContributionsPage() {
@@ -74,6 +75,7 @@ export default function LabourContributionsPage() {
               <th className="py-2">{t("common.description")}</th>
               <th className="py-2">{t("labour.hours")}</th>
               <th className="py-2">{t("common.date")}</th>
+              <th className="py-2">{t("common.status")}</th>
             </tr>
           </thead>
           <tbody>
@@ -82,6 +84,9 @@ export default function LabourContributionsPage() {
                 <td className="py-2">{c.description}</td>
                 <td className="py-2">{c.hours ?? "-"}</td>
                 <td className="py-2">{new Date(c.date).toLocaleDateString()}</td>
+                <td className="py-2">
+                  <ConfirmationBadge confirmedAt={c.confirmedAt} />
+                </td>
               </tr>
             ))}
           </tbody>

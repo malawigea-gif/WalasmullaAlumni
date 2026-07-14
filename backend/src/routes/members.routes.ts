@@ -155,6 +155,22 @@ router.post(
   })
 );
 
+router.patch(
+  "/:id/fee-payments/:paymentId/confirm",
+  requireElevatedAccess,
+  asyncHandler(async (req, res) => {
+    const payment = await prisma.feePayment.findUnique({ where: { id: req.params.paymentId } });
+    if (!payment || payment.memberId !== req.params.id) throw new ApiError(404, "Fee payment not found");
+    if (payment.confirmedAt) throw new ApiError(409, "This payment has already been confirmed");
+
+    const updated = await prisma.feePayment.update({
+      where: { id: payment.id },
+      data: { confirmedBy: req.user!.id, confirmedAt: new Date() },
+    });
+    res.json(updated);
+  })
+);
+
 router.get(
   "/:id/donations",
   requireSelfOrElevated(),
@@ -182,6 +198,22 @@ router.post(
       },
     });
     res.status(201).json(donation);
+  })
+);
+
+router.patch(
+  "/:id/donations/:donationId/confirm",
+  requireElevatedAccess,
+  asyncHandler(async (req, res) => {
+    const donation = await prisma.donation.findUnique({ where: { id: req.params.donationId } });
+    if (!donation || donation.memberId !== req.params.id) throw new ApiError(404, "Donation not found");
+    if (donation.confirmedAt) throw new ApiError(409, "This donation has already been confirmed");
+
+    const updated = await prisma.donation.update({
+      where: { id: donation.id },
+      data: { confirmedBy: req.user!.id, confirmedAt: new Date() },
+    });
+    res.json(updated);
   })
 );
 
@@ -215,6 +247,22 @@ router.post(
   })
 );
 
+router.patch(
+  "/:id/labour-contributions/:contributionId/confirm",
+  requireElevatedAccess,
+  asyncHandler(async (req, res) => {
+    const contribution = await prisma.labourContribution.findUnique({ where: { id: req.params.contributionId } });
+    if (!contribution || contribution.memberId !== req.params.id) throw new ApiError(404, "Labour contribution not found");
+    if (contribution.confirmedAt) throw new ApiError(409, "This labour contribution has already been confirmed");
+
+    const updated = await prisma.labourContribution.update({
+      where: { id: contribution.id },
+      data: { confirmedBy: req.user!.id, confirmedAt: new Date() },
+    });
+    res.json(updated);
+  })
+);
+
 router.get(
   "/:id/attendance",
   requireSelfOrElevated(),
@@ -225,6 +273,23 @@ router.get(
       orderBy: { scannedAt: "desc" },
     });
     res.json(attendance);
+  })
+);
+
+router.patch(
+  "/:id/attendance/:attendanceId/confirm",
+  requireElevatedAccess,
+  asyncHandler(async (req, res) => {
+    const attendance = await prisma.meetingAttendance.findUnique({ where: { id: req.params.attendanceId } });
+    if (!attendance || attendance.memberId !== req.params.id) throw new ApiError(404, "Attendance record not found");
+    if (attendance.confirmedAt) throw new ApiError(409, "This attendance record has already been confirmed");
+
+    const updated = await prisma.meetingAttendance.update({
+      where: { id: attendance.id },
+      data: { confirmedBy: req.user!.id, confirmedAt: new Date() },
+      include: { meeting: true },
+    });
+    res.json(updated);
   })
 );
 
