@@ -169,6 +169,29 @@ export interface ExecutiveHistoryEntry {
   createdAt: string;
 }
 
+export type AccountEntryType = "income" | "expense";
+
+export interface AccountEntryApprovalRecord {
+  id: string;
+  accountEntryId: string;
+  approverId: string;
+  approver?: Member;
+  approvedAt: string;
+}
+
+export interface AccountEntry {
+  id: string;
+  type: AccountEntryType;
+  description: string;
+  amount: string;
+  entryDate: string;
+  recordedBy: string;
+  recorder?: Member;
+  createdAt: string;
+  approvals?: AccountEntryApprovalRecord[];
+  isFullyApproved: boolean;
+}
+
 export interface ReportSummary {
   totalMembers: number;
   feeCollectionByYear: { year: number; total: string }[];

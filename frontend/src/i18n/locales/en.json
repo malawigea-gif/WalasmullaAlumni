@@ -14,6 +14,8 @@
     "sendMessage": "Send Message",
     "reports": "Reports",
     "executives": "Executive Management",
+    "accounts": "Association Accounts",
+    "accountsManage": "Accounts Management",
     "admin": "Admin Dashboard",
     "logout": "Logout"
   },
@@ -124,7 +126,8 @@
   "members": {
     "title": "Member Directory",
     "searchPlaceholder": "Search by name or email",
-    "viewProfile": "View Profile"
+    "viewProfile": "View Profile",
+    "scanQr": "Scan QR"
   },
   "scanner": {
     "title": "QR Scanner",
@@ -173,6 +176,20 @@
     },
     "actionAppointed": "Appointed",
     "actionRemoved": "Removed"
+  },
+  "accounts": {
+    "title": "Association Accounts",
+    "memberViewNote": "Showing approved entries through the end of last month.",
+    "manageTitle": "Accounts Management",
+    "type": "Type",
+    "types": {
+      "income": "Income",
+      "expense": "Expense"
+    },
+    "addEntry": "Add Entry",
+    "recordedBy": "Recorded By",
+    "approve": "Approve",
+    "approvalCount": "{{count}}/2 approved"
   },
   "dashboard": {
     "welcome": "Welcome, {{name}}",

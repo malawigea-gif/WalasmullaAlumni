@@ -14,6 +14,8 @@
     "sendMessage": "පණිවිඩයක් යවන්න",
     "reports": "වාර්තා",
     "executives": "විධායක කළමනාකරණය",
+    "accounts": "සමිතියේ ගිණුම්",
+    "accountsManage": "ගිණුම් කළමනාකරණය",
     "admin": "පරිපාලක පුවරුව",
     "logout": "ඉවත් වන්න"
   },
@@ -124,7 +126,8 @@
   "members": {
     "title": "සාමාජික නාමාවලිය",
     "searchPlaceholder": "නම හෝ විද්‍යුත් තැපෑල අනුව සොයන්න",
-    "viewProfile": "පැතිකඩ බලන්න"
+    "viewProfile": "පැතිකඩ බලන්න",
+    "scanQr": "QR කේතය ස්කෑන් කරන්න"
   },
   "scanner": {
     "title": "QR ස්කෑනරය",
@@ -173,6 +176,20 @@
     },
     "actionAppointed": "පත් කරන ලදී",
     "actionRemoved": "ඉවත් කරන ලදී"
+  },
+  "accounts": {
+    "title": "සමිතියේ ගිණුම්",
+    "memberViewNote": "පසුගිය මාසය අවසන් වන තෙක් අනුමත කරන ලද ගිණුම් සටහන් පෙන්වයි.",
+    "manageTitle": "ගිණුම් කළමනාකරණය",
+    "type": "වර්ගය",
+    "types": {
+      "income": "ආදායම",
+      "expense": "වියදම"
+    },
+    "addEntry": "සටහනක් එකතු කරන්න",
+    "recordedBy": "සටහන් කළේ",
+    "approve": "අනුමත කරන්න",
+    "approvalCount": "{{count}}/2 අනුමත කර ඇත"
   },
   "dashboard": {
     "welcome": "සාදරයෙන් පිළිගනිමු, {{name}}",

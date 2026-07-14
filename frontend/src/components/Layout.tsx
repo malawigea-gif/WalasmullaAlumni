@@ -11,6 +11,7 @@ const memberLinks = [
   { to: "/attendance", key: "attendance" },
   { to: "/qr-code", key: "qrCode" },
   { to: "/inbox", key: "inbox" },
+  { to: "/accounts", key: "accounts" },
 ] as const;
 
 const executiveLinks = [
@@ -24,6 +25,7 @@ const executiveLinks = [
 export function Layout() {
   const { t, i18n } = useTranslation();
   const { user, logout, isElevated } = useAuth();
+  const isExecOrAdmin = user?.role === "executive" || user?.role === "admin";
 
   function toggleLanguage() {
     i18n.changeLanguage(i18n.language === "si" ? "en" : "si");
@@ -75,6 +77,14 @@ export function Layout() {
                   {t(`nav.${link.key}`)}
                 </NavLink>
               ))}
+            </>
+          )}
+          {isExecOrAdmin && (
+            <>
+              <div className="mt-2 border-t border-slate-200 pt-2 dark:border-slate-800" />
+              <NavLink to="/accounts/manage" className={navLinkClass}>
+                {t("nav.accountsManage")}
+              </NavLink>
             </>
           )}
           {user?.role === "admin" && (

@@ -13,6 +13,7 @@ import LabourContributionsPage from "./pages/LabourContributionsPage";
 import AttendancePage from "./pages/AttendancePage";
 import QrCodePage from "./pages/QrCodePage";
 import InboxPage from "./pages/InboxPage";
+import AccountsPage from "./pages/AccountsPage";
 
 import MembersPage from "./pages/executive/MembersPage";
 import MemberDetailPage from "./pages/executive/MemberDetailPage";
@@ -20,6 +21,7 @@ import ScannerPage from "./pages/executive/ScannerPage";
 import SendMessagePage from "./pages/executive/SendMessagePage";
 import ReportsPage from "./pages/executive/ReportsPage";
 import ExecutivesPage from "./pages/executive/ExecutivesPage";
+import AccountsManagementPage from "./pages/executive/AccountsManagementPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 
 export default function App() {
@@ -39,6 +41,7 @@ export default function App() {
           <Route path="/attendance" element={<AttendancePage />} />
           <Route path="/qr-code" element={<QrCodePage />} />
           <Route path="/inbox" element={<InboxPage />} />
+          <Route path="/accounts" element={<AccountsPage />} />
 
           <Route element={<ProtectedRoute executiveOnly />}>
             <Route path="/members" element={<MembersPage />} />
@@ -47,6 +50,10 @@ export default function App() {
             <Route path="/send-message" element={<SendMessagePage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/executives" element={<ExecutivesPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute execOrAdminOnly />}>
+            <Route path="/accounts/manage" element={<AccountsManagementPage />} />
           </Route>
 
           <Route element={<ProtectedRoute adminOnly />}>

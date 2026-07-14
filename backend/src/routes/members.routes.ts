@@ -66,6 +66,19 @@ router.get(
 );
 
 router.get(
+  "/by-qr/:qrToken",
+  requireElevatedAccess,
+  asyncHandler(async (req, res) => {
+    const qr = await prisma.qRCode.findUnique({
+      where: { qrToken: req.params.qrToken },
+      select: { memberId: true },
+    });
+    if (!qr) throw new ApiError(404, "No member found for this QR code");
+    res.json({ memberId: qr.memberId });
+  })
+);
+
+router.get(
   "/:id",
   requireSelfOrElevated(),
   asyncHandler(async (req, res) => {
@@ -139,7 +152,7 @@ router.get(
 
 router.post(
   "/:id/fee-payments",
-  requireSelfOrElevated(),
+  requireElevatedAccess,
   validateBody(feePaymentSchema),
   asyncHandler(async (req, res) => {
     const payment = await prisma.feePayment.create({
@@ -185,7 +198,7 @@ router.get(
 
 router.post(
   "/:id/donations",
-  requireSelfOrElevated(),
+  requireElevatedAccess,
   validateBody(donationSchema),
   asyncHandler(async (req, res) => {
     const donation = await prisma.donation.create({
@@ -231,7 +244,7 @@ router.get(
 
 router.post(
   "/:id/labour-contributions",
-  requireSelfOrElevated(),
+  requireElevatedAccess,
   validateBody(labourContributionSchema),
   asyncHandler(async (req, res) => {
     const contribution = await prisma.labourContribution.create({

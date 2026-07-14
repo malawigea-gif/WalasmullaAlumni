@@ -1,0 +1,166 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "../../context/AuthContext";
+import { api } from "../../lib/api";
+import type { AccountEntry, AccountEntryType } from "../../types";
+
+export default function AccountsManagementPage() {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const isTreasurer = user?.role === "executive" && user.executivePosition === "treasurer";
+
+  const [entries, setEntries] = useState<AccountEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [type, setType] = useState<AccountEntryType>("income");
+  const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    const { data } = await api.get("/accounts/entries");
+    setEntries(data);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    try {
+      await api.post("/accounts/entries", { type, description, amount: Number(amount) });
+      setDescription("");
+      setAmount("");
+      await load();
+    } catch (err: any) {
+      setError(err.response?.data?.error ?? "Failed to add entry");
+    }
+  }
+
+  async function handleApprove(entryId: string) {
+    setError(null);
+    try {
+      await api.post(`/accounts/entries/${entryId}/approve`);
+      await load();
+    } catch (err: any) {
+      setError(err.response?.data?.error ?? "Failed to approve entry");
+    }
+  }
+
+  return (
+    <div>
+      <h1 className="mb-4 text-2xl font-bold">{t("accounts.manageTitle")}</h1>
+
+      {error && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+
+      {isTreasurer && (
+        <form onSubmit={handleSubmit} className="mb-6 flex flex-wrap items-end gap-2">
+          <div>
+            <label className="block text-sm font-medium">{t("accounts.type")}</label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as AccountEntryType)}
+              className="mt-1 rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+            >
+              <option value="income">{t("accounts.types.income")}</option>
+              <option value="expense">{t("accounts.types.expense")}</option>
+            </select>
+          </div>
+          <div className="min-w-48 flex-1">
+            <label className="block text-sm font-medium">{t("common.description")}</label>
+            <input
+              required
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">{t("common.amount")}</label>
+            <input
+              type="number"
+              step="0.01"
+              required
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="mt-1 rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+            />
+          </div>
+          <button type="submit" className="rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700">
+            {t("accounts.addEntry")}
+          </button>
+        </form>
+      )}
+
+      {loading ? (
+        <p>{t("common.loading")}</p>
+      ) : (
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 dark:border-slate-800">
+              <th className="py-2">{t("common.date")}</th>
+              <th className="py-2">{t("accounts.type")}</th>
+              <th className="py-2">{t("common.description")}</th>
+              <th className="py-2">{t("common.amount")}</th>
+              <th className="py-2">{t("accounts.recordedBy")}</th>
+              <th className="py-2">{t("common.status")}</th>
+              <th className="py-2">{t("common.actions")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry) => {
+              const approvalCount = entry.approvals?.length ?? 0;
+              const alreadyApprovedByMe = entry.approvals?.some((a) => a.approverId === user?.id) ?? false;
+              const isOwnEntry = entry.recordedBy === user?.id;
+              const canApprove = !entry.isFullyApproved && !isOwnEntry && !alreadyApprovedByMe;
+
+              return (
+                <tr key={entry.id} className="border-b border-slate-100 dark:border-slate-800/50">
+                  <td className="py-2">{new Date(entry.entryDate).toLocaleDateString()}</td>
+                  <td className="py-2">
+                    <span
+                      className={
+                        entry.type === "income"
+                          ? "text-emerald-700 dark:text-emerald-400"
+                          : "text-red-700 dark:text-red-400"
+                      }
+                    >
+                      {t(`accounts.types.${entry.type}`)}
+                    </span>
+                  </td>
+                  <td className="py-2">{entry.description}</td>
+                  <td className="py-2">Rs. {entry.amount}</td>
+                  <td className="py-2">{entry.recorder?.profile?.fullName ?? entry.recorder?.email ?? "-"}</td>
+                  <td className="py-2">
+                    {entry.isFullyApproved ? (
+                      <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                        {t("common.confirmed")}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                        {t("accounts.approvalCount", { count: approvalCount })}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-2">
+                    {canApprove && (
+                      <button
+                        type="button"
+                        onClick={() => handleApprove(entry.id)}
+                        className="rounded-md bg-amber-600 px-2 py-1 text-xs font-medium text-white hover:bg-amber-700"
+                      >
+                        {t("accounts.approve")}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}

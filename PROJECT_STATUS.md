@@ -1,6 +1,6 @@
 # Project Status Report — Walasmulla Alumni Association Management System
 
-_Last updated: 2026-07-14_
+_Last updated: 2026-07-14 (accounts ledger + recording-permission change)_
 
 This document is a reference for future updates/handoff. It captures what exists, where it's deployed, and what's left to do.
 
@@ -64,14 +64,26 @@ No custom domain is configured — the app runs on the free platform subdomains 
   school period, academic/co-curricular achievements, scholarship exam result,
   leadership roles, extracurricular groups, higher education, profile photo upload
 - Dynamic add/remove of children under a member's profile
-- Fee payment / donation / labour contribution: view own history + add new record
+- Fee payment / donation / labour contribution: view own history (read-only —
+  as of 2026-07-14, only executives/admin can record these; see below)
 - Attendance history (list of meetings attended)
 - Personal QR code (view + download as image)
 - Inbox (view received messages, mark as read)
+- Association Accounts (`/accounts`, read-only): approved income/expense
+  ledger entries, but only through the end of last calendar month — the
+  current month's entries stay hidden from members even if already approved
 
 **Executive-only**
-- Member directory: search, filter, pagination; view/edit any member's profile
-- Record a fee payment / donation / labour contribution on behalf of any member
+- Member directory: search, filter, pagination; view/edit any member's profile.
+  Includes a "Scan QR" option (camera-based, via html5-qrcode) as an
+  alternative to typing a name/email — scanning a member's personal QR code
+  resolves it (`GET /members/by-qr/:qrToken`, `requireElevatedAccess`) and
+  jumps straight to that member's profile page.
+- Record a fee payment / donation / labour contribution on behalf of any
+  member — as of 2026-07-14 this is executive/admin/delegated-member only
+  (`requireElevatedAccess` on the `POST` routes); plain members can no longer
+  self-record these, only view their own history. All data entry happens from
+  a member's own profile page (`/members/:id`), not the self-service pages.
 - QR Scanner page (camera-based, via html5-qrcode): select a meeting, scan a
   member's QR code, record attendance (duplicate-scan protected)
 - Confirmation workflow: executives, admins, and delegated members can confirm
@@ -92,6 +104,15 @@ No custom domain is configured — the app runs on the free platform subdomains 
   (only a current executive can do this; appointing to an occupied position
   auto-removes the previous holder), full audit history (actor, target, action,
   reason, timestamp)
+- Accounts Management (`/accounts/manage`, executive/admin only — deliberately
+  excludes delegated members): full income/expense ledger with a dual-approval
+  workflow. Only the member currently holding the **treasurer** position can
+  record a new entry (`POST /accounts/entries`, `requireTreasurer`). Any other
+  executive or admin can approve it (`POST /accounts/entries/:id/approve`,
+  `requireExecutiveOrAdmin`) — an entry needs exactly 2 distinct approvers,
+  the treasurer who recorded it cannot approve their own entry
+  (maker-checker), and the same person cannot approve twice. An entry is
+  "fully approved" once it has 2 `AccountEntryApproval` rows.
 
 **Admin-only**
 - Admin Dashboard (`/admin`, `frontend/src/pages/admin/AdminDashboardPage.tsx`):
@@ -144,6 +165,10 @@ React SPA (Vercel)  →  Express API (Render)  →  PostgreSQL (Supabase)
   confirmation workflow
 - `Message`, `MessageRecipient` — messages and per-recipient read status
 - `QRCode` — one unique QR token per member
+- `AccountEntry` — association ledger entry (type income/expense, description,
+  amount, entryDate, recordedBy — treasurer only); `AccountEntryApproval` —
+  one row per distinct approver (unique on entry+approver), 2 rows = fully
+  approved
 - `PrivilegeDelegation` — temporary executive-level access grants (member,
   granted-by admin, granted-at, revoked-at, is-active)
 - `AuditLog` — generic actor/target/action/reason/timestamp log for admin

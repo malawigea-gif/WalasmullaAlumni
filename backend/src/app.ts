@@ -15,6 +15,7 @@ import messageRoutes from "./routes/messages.routes";
 import executiveRoutes from "./routes/executives.routes";
 import reportRoutes from "./routes/reports.routes";
 import adminRoutes from "./routes/admin.routes";
+import accountRoutes from "./routes/accounts.routes";
 
 export function createApp() {
   const app = express();
@@ -39,6 +40,7 @@ export function createApp() {
   app.use("/api/executives", executiveRoutes);
   app.use("/api/reports", reportRoutes);
   app.use("/api/admin", adminRoutes);
+  app.use("/api/accounts", accountRoutes);
 
   app.use(errorHandler);
 

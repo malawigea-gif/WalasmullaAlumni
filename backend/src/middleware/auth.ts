@@ -62,6 +62,22 @@ export function requireAdmin(req: Request, _res: Response, next: NextFunction) {
   next();
 }
 
+/** Executives and admins only — does not include delegated members. */
+export function requireExecutiveOrAdmin(req: Request, _res: Response, next: NextFunction) {
+  if (req.user?.role !== "executive" && req.user?.role !== "admin") {
+    throw new ApiError(403, "Executive or admin access required");
+  }
+  next();
+}
+
+/** Only the member currently holding the treasurer position. */
+export function requireTreasurer(req: Request, _res: Response, next: NextFunction) {
+  if (req.user?.role !== "executive" || req.user?.executivePosition !== "treasurer") {
+    throw new ApiError(403, "Treasurer access required");
+  }
+  next();
+}
+
 async function hasActiveDelegation(memberId: string): Promise<boolean> {
   const delegation = await prisma.privilegeDelegation.findFirst({
     where: { memberId, isActive: true },

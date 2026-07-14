@@ -53,6 +53,11 @@ enum RecipientType {
   broadcast
 }
 
+enum AccountEntryType {
+  income
+  expense
+}
+
 model Member {
   id                  String   @id @default(cuid())
   email               String   @unique
@@ -97,6 +102,9 @@ model Member {
 
   sentMessages        Message[]           @relation("SentMessages")
   messageRecipients   MessageRecipient[]  @relation("MessageRecipients")
+
+  recordedAccountEntries AccountEntry[]         @relation("RecordedByAccountEntries")
+  accountEntryApprovals  AccountEntryApproval[] @relation("AccountEntryApprovals")
 
   @@map("members")
 }
@@ -293,6 +301,33 @@ model PrivilegeDelegation {
   isActive   Boolean   @default(true) @map("is_active")
 
   @@map("privilege_delegations")
+}
+
+model AccountEntry {
+  id          String           @id @default(cuid())
+  type        AccountEntryType
+  description String
+  amount      Decimal          @db.Decimal(12, 2)
+  entryDate   DateTime         @map("entry_date")
+  recordedBy  String           @map("recorded_by")
+  recorder    Member           @relation("RecordedByAccountEntries", fields: [recordedBy], references: [id])
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  approvals   AccountEntryApproval[]
+
+  @@map("account_entries")
+}
+
+model AccountEntryApproval {
+  id             String       @id @default(cuid())
+  accountEntryId String       @map("account_entry_id")
+  accountEntry   AccountEntry @relation(fields: [accountEntryId], references: [id], onDelete: Cascade)
+  approverId     String       @map("approver_id")
+  approver       Member       @relation("AccountEntryApprovals", fields: [approverId], references: [id])
+  approvedAt     DateTime     @default(now()) @map("approved_at")
+
+  @@unique([accountEntryId, approverId])
+  @@map("account_entry_approvals")
 }
 
 model AuditLog {
