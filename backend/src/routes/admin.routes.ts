@@ -1,4 +1,6 @@
 import { Router } from "express";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { authenticate, requireAdmin } from "../middleware/auth";
@@ -135,6 +137,29 @@ router.post(
     ]);
 
     res.json(toPublicMember(member));
+  })
+);
+
+router.post(
+  "/members/:id/reset-password",
+  validateBody(adminActionSchema),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const target = await prisma.member.findUnique({ where: { id } });
+    if (!target || target.deletedAt) throw new ApiError(404, "Member not found");
+
+    const temporaryPassword = crypto.randomBytes(9).toString("base64").replace(/[+/=]/g, "").slice(0, 12);
+    const passwordHash = await bcrypt.hash(temporaryPassword, 10);
+
+    await prisma.$transaction([
+      prisma.member.update({ where: { id }, data: { passwordHash } }),
+      prisma.auditLog.create({
+        data: { actorId: req.user!.id, targetId: id, action: "password_reset", reason: req.body.reason ?? null },
+      }),
+    ]);
+
+    res.json({ temporaryPassword });
   })
 );
 

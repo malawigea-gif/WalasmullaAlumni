@@ -177,6 +177,20 @@
     "actionAppointed": "Appointed",
     "actionRemoved": "Removed"
   },
+  "receipt": {
+    "print": "Print Receipt",
+    "feeTitle": "Fee Payment Receipt",
+    "donationTitle": "Donation Receipt",
+    "voucherTitle": "Expense Voucher",
+    "no": "No.",
+    "date": "Date",
+    "member": "Member",
+    "year": "Year",
+    "description": "Description",
+    "category": "Category",
+    "amount": "Amount",
+    "issuedBy": "Issued By"
+  },
   "accounts": {
     "title": "Association Accounts",
     "memberViewNote": "Showing approved entries through the end of last month.",
@@ -189,7 +203,15 @@
     "addEntry": "Add Entry",
     "recordedBy": "Recorded By",
     "approve": "Approve",
-    "approvalCount": "{{count}}/2 approved"
+    "approvalCount": "{{count}}/2 approved",
+    "budgetLine": "Budget Line",
+    "noBudgetLine": "— none (general expense, needs approval) —",
+    "budgetTitle": "Budget",
+    "category": "Category",
+    "plannedAmount": "Planned Amount",
+    "spent": "Spent",
+    "remaining": "Remaining",
+    "addBudgetLine": "Add Budget Line"
   },
   "dashboard": {
     "welcome": "Welcome, {{name}}",
@@ -213,6 +235,9 @@
     "delegate": "Grant Delegation",
     "revokeDelegation": "Revoke Delegation",
     "restore": "Restore",
+    "resetPassword": "Reset Password",
+    "newPasswordFor": "New temporary password for {{name}}:",
+    "newPasswordNote": "Share this with the member directly (call, message). It will not be shown again.",
     "auditLog": "Audit Log",
     "action": "Action",
     "actor": "Performed By",
@@ -228,7 +253,8 @@
       "member_deleted": "Deleted",
       "member_restored": "Restored",
       "delegation_granted": "Delegation Granted",
-      "delegation_revoked": "Delegation Revoked"
+      "delegation_revoked": "Delegation Revoked",
+      "password_reset": "Password Reset"
     }
   }
 }

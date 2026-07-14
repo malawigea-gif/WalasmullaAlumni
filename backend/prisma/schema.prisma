@@ -26,6 +26,7 @@ enum AuditAction {
   member_restored
   delegation_granted
   delegation_revoked
+  password_reset
 }
 
 enum ExecutivePositionType {
@@ -105,6 +106,7 @@ model Member {
 
   recordedAccountEntries AccountEntry[]         @relation("RecordedByAccountEntries")
   accountEntryApprovals  AccountEntryApproval[] @relation("AccountEntryApprovals")
+  createdBudgetLines     BudgetLine[]           @relation("CreatedByBudgetLines")
 
   @@map("members")
 }
@@ -304,18 +306,36 @@ model PrivilegeDelegation {
 }
 
 model AccountEntry {
-  id          String           @id @default(cuid())
-  type        AccountEntryType
-  description String
-  amount      Decimal          @db.Decimal(12, 2)
-  entryDate   DateTime         @map("entry_date")
-  recordedBy  String           @map("recorded_by")
-  recorder    Member           @relation("RecordedByAccountEntries", fields: [recordedBy], references: [id])
-  createdAt   DateTime         @default(now()) @map("created_at")
+  id           String           @id @default(cuid())
+  type         AccountEntryType
+  description  String
+  amount       Decimal          @db.Decimal(12, 2)
+  entryDate    DateTime         @map("entry_date")
+  recordedBy   String           @map("recorded_by")
+  recorder     Member           @relation("RecordedByAccountEntries", fields: [recordedBy], references: [id])
+  createdAt    DateTime         @default(now()) @map("created_at")
 
-  approvals   AccountEntryApproval[]
+  /// When set, this expense was drawn against a budget line by the treasurer and needs no further approval.
+  budgetLineId String?          @map("budget_line_id")
+  budgetLine   BudgetLine?      @relation(fields: [budgetLineId], references: [id])
+
+  approvals    AccountEntryApproval[]
 
   @@map("account_entries")
+}
+
+model BudgetLine {
+  id            String   @id @default(cuid())
+  category      String
+  plannedAmount Decimal  @db.Decimal(12, 2) @map("planned_amount")
+  year          Int
+  createdBy     String   @map("created_by")
+  creator       Member   @relation("CreatedByBudgetLines", fields: [createdBy], references: [id])
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  expenses      AccountEntry[]
+
+  @@map("budget_lines")
 }
 
 model AccountEntryApproval {

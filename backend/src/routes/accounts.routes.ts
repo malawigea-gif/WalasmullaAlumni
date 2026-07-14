@@ -5,11 +5,15 @@ import { validateBody } from "../middleware/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { SAFE_MEMBER_SELECT } from "../utils/serialize";
-import { createAccountEntrySchema } from "../schemas/account.schema";
+import { createAccountEntrySchema, createBudgetLineSchema } from "../schemas/account.schema";
 
 const router = Router();
 
 router.use(authenticate);
+
+function computeIsFullyApproved(entry: { budgetLineId: string | null; approvals: unknown[] }) {
+  return !!entry.budgetLineId || entry.approvals.length >= 2;
+}
 
 router.get(
   "/entries",
@@ -20,11 +24,12 @@ router.get(
       const entries = await prisma.accountEntry.findMany({
         include: {
           recorder: { select: SAFE_MEMBER_SELECT },
+          budgetLine: true,
           approvals: { include: { approver: { select: SAFE_MEMBER_SELECT } } },
         },
         orderBy: { entryDate: "desc" },
       });
-      res.json(entries.map((e) => ({ ...e, isFullyApproved: e.approvals.length >= 2 })));
+      res.json(entries.map((e) => ({ ...e, isFullyApproved: computeIsFullyApproved(e) })));
       return;
     }
 
@@ -36,7 +41,7 @@ router.get(
       orderBy: { entryDate: "desc" },
     });
     const approvedOnly = entries
-      .filter((e) => e.approvals.length >= 2)
+      .filter((e) => computeIsFullyApproved(e))
       .map(({ approvals: _approvals, ...e }) => ({ ...e, isFullyApproved: true }));
     res.json(approvedOnly);
   })
@@ -47,6 +52,14 @@ router.post(
   requireTreasurer,
   validateBody(createAccountEntrySchema),
   asyncHandler(async (req, res) => {
+    if (req.body.budgetLineId) {
+      if (req.body.type !== "expense") {
+        throw new ApiError(400, "Only expense entries can be drawn against a budget line");
+      }
+      const budgetLine = await prisma.budgetLine.findUnique({ where: { id: req.body.budgetLineId } });
+      if (!budgetLine) throw new ApiError(404, "Budget line not found");
+    }
+
     const entry = await prisma.accountEntry.create({
       data: {
         type: req.body.type,
@@ -54,9 +67,11 @@ router.post(
         amount: req.body.amount,
         entryDate: req.body.entryDate ?? new Date(),
         recordedBy: req.user!.id,
+        budgetLineId: req.body.budgetLineId ?? null,
       },
+      include: { budgetLine: true },
     });
-    res.status(201).json({ ...entry, approvals: [], isFullyApproved: false });
+    res.status(201).json({ ...entry, approvals: [], isFullyApproved: computeIsFullyApproved({ ...entry, approvals: [] }) });
   })
 );
 
@@ -69,6 +84,9 @@ router.post(
       include: { approvals: true },
     });
     if (!entry) throw new ApiError(404, "Account entry not found");
+    if (entry.budgetLineId) {
+      throw new ApiError(409, "Budget-linked expenses are treasurer-authorized and do not require approval");
+    }
     if (entry.recordedBy === req.user!.id) {
       throw new ApiError(403, "You cannot approve an entry you recorded yourself");
     }
@@ -87,7 +105,44 @@ router.post(
       where: { id: entry.id },
       include: { approvals: { include: { approver: { select: SAFE_MEMBER_SELECT } } } },
     });
-    res.json({ ...updated, isFullyApproved: updated.approvals.length >= 2 });
+    res.json({ ...updated, isFullyApproved: computeIsFullyApproved(updated) });
+  })
+);
+
+router.get(
+  "/budget-lines",
+  requireExecutiveOrAdmin,
+  asyncHandler(async (_req, res) => {
+    const lines = await prisma.budgetLine.findMany({
+      include: {
+        creator: { select: SAFE_MEMBER_SELECT },
+        expenses: true,
+      },
+      orderBy: [{ year: "desc" }, { createdAt: "desc" }],
+    });
+    res.json(
+      lines.map(({ expenses, ...line }) => {
+        const spent = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+        return { ...line, spent: spent.toFixed(2), remaining: (Number(line.plannedAmount) - spent).toFixed(2) };
+      })
+    );
+  })
+);
+
+router.post(
+  "/budget-lines",
+  requireTreasurer,
+  validateBody(createBudgetLineSchema),
+  asyncHandler(async (req, res) => {
+    const line = await prisma.budgetLine.create({
+      data: {
+        category: req.body.category,
+        plannedAmount: req.body.plannedAmount,
+        year: req.body.year,
+        createdBy: req.user!.id,
+      },
+    });
+    res.status(201).json({ ...line, spent: "0.00", remaining: line.plannedAmount.toString() });
   })
 );
 

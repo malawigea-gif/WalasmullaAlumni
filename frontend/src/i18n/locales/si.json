@@ -177,6 +177,20 @@
     "actionAppointed": "පත් කරන ලදී",
     "actionRemoved": "ඉවත් කරන ලදී"
   },
+  "receipt": {
+    "print": "රිසිට් පත මුද්‍රණය කරන්න",
+    "feeTitle": "සාමාජික ගාස්තු රිසිට් පත",
+    "donationTitle": "පරිත්‍යාග රිසිට් පත",
+    "voucherTitle": "වියදම් කුවිතාන්සිය",
+    "no": "අංකය",
+    "date": "දිනය",
+    "member": "සාමාජිකයා",
+    "year": "වර්ෂය",
+    "description": "විස්තරය",
+    "category": "කාණ්ඩය",
+    "amount": "මුදල",
+    "issuedBy": "නිකුත් කළේ"
+  },
   "accounts": {
     "title": "සමිතියේ ගිණුම්",
     "memberViewNote": "පසුගිය මාසය අවසන් වන තෙක් අනුමත කරන ලද ගිණුම් සටහන් පෙන්වයි.",
@@ -189,7 +203,15 @@
     "addEntry": "සටහනක් එකතු කරන්න",
     "recordedBy": "සටහන් කළේ",
     "approve": "අනුමත කරන්න",
-    "approvalCount": "{{count}}/2 අනුමත කර ඇත"
+    "approvalCount": "{{count}}/2 අනුමත කර ඇත",
+    "budgetLine": "අයවැය කාණ්ඩය",
+    "noBudgetLine": "— කිසිවක් නැත (සාමාන්‍ය වියදම, අනුමැතිය අවශ්‍යයි) —",
+    "budgetTitle": "අයවැය",
+    "category": "කාණ්ඩය",
+    "plannedAmount": "සැලසුම් කළ මුදල",
+    "spent": "වියදම් කළ",
+    "remaining": "ඉතිරි",
+    "addBudgetLine": "අයවැය කාණ්ඩයක් එකතු කරන්න"
   },
   "dashboard": {
     "welcome": "සාදරයෙන් පිළිගනිමු, {{name}}",
@@ -213,6 +235,9 @@
     "delegate": "බලය පවරන්න",
     "revokeDelegation": "බලය අහෝසි කරන්න",
     "restore": "යළි ස්ථාපනය කරන්න",
+    "resetPassword": "මුරපදය යළි සකසන්න",
+    "newPasswordFor": "{{name}} සඳහා නව තාවකාලික මුරපදය:",
+    "newPasswordNote": "මෙය සාමාජිකයාට කෙලින්ම (කතා කර, පණිවිඩයෙන්) දන්වන්න. නැවත පෙන්වන්නේ නැත.",
     "auditLog": "විගණන සටහන",
     "action": "ක්‍රියාව",
     "actor": "සිදු කළේ",
@@ -228,7 +253,8 @@
       "member_deleted": "මකන ලදී",
       "member_restored": "යළි ස්ථාපනය කරන ලදී",
       "delegation_granted": "බලය පවරන ලදී",
-      "delegation_revoked": "බලය අහෝසි කරන ලදී"
+      "delegation_revoked": "බලය අහෝසි කරන ලදී",
+      "password_reset": "මුරපදය යළි සකසන ලදී"
     }
   }
 }

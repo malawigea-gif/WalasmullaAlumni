@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import type { AuditLogEntry, Member, PrivilegeDelegation } from "../../types";
 
-type ActionType = "block" | "unblock" | "delete" | "delegate" | "revoke";
+type ActionType = "block" | "unblock" | "delete" | "delegate" | "revoke" | "reset-password";
 
 export default function AdminDashboardPage() {
   const { t } = useTranslation();
@@ -20,6 +20,7 @@ export default function AdminDashboardPage() {
   >(null);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [resetPasswordResult, setResetPasswordResult] = useState<{ memberLabel: string; password: string } | null>(null);
 
   async function loadMembers() {
     const { data } = await api.get("/admin/members", { params: { q: query || undefined, page } });
@@ -65,12 +66,17 @@ export default function AdminDashboardPage() {
     if (!activeAction) return;
     setError(null);
     try {
-      const { type, memberId, delegationId } = activeAction;
+      const { type, memberId, delegationId, label } = activeAction;
       if (type === "block") await api.post(`/admin/members/${memberId}/block`, { reason });
       else if (type === "unblock") await api.post(`/admin/members/${memberId}/unblock`, { reason });
       else if (type === "delete") await api.delete(`/admin/members/${memberId}`, { data: { reason } });
       else if (type === "delegate") await api.post(`/admin/members/${memberId}/delegate`, { reason });
       else if (type === "revoke") await api.post(`/admin/delegations/${delegationId}/revoke`, { reason });
+      else if (type === "reset-password") {
+        const { data } = await api.post(`/admin/members/${memberId}/reset-password`, { reason });
+        const target = members.find((m) => m.id === memberId);
+        setResetPasswordResult({ memberLabel: target?.profile?.fullName ?? target?.email ?? label, password: data.temporaryPassword });
+      }
 
       setActiveAction(null);
       await Promise.all([loadMembers(), loadDelegations(), loadAuditLog()]);
@@ -82,6 +88,26 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">{t("admin.title")}</h1>
+
+      {resetPasswordResult && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                {t("admin.newPasswordFor", { name: resetPasswordResult.memberLabel })}
+              </p>
+              <p className="mt-1 font-mono text-lg text-amber-950 dark:text-amber-100">{resetPasswordResult.password}</p>
+              <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">{t("admin.newPasswordNote")}</p>
+            </div>
+            <button
+              onClick={() => setResetPasswordResult(null)}
+              className="rounded-md border border-amber-400 px-2 py-1 text-xs dark:border-amber-600"
+            >
+              {t("common.close")}
+            </button>
+          </div>
+        </div>
+      )}
 
       <section>
         <h2 className="mb-2 text-lg font-semibold">{t("admin.members")}</h2>
@@ -172,6 +198,12 @@ export default function AdminDashboardPage() {
                                   {t("admin.delegate")}
                                 </button>
                               ))}
+                            <button
+                              onClick={() => openAction("reset-password", t("admin.resetPassword"), m.id)}
+                              className="text-slate-700 hover:underline dark:text-slate-300"
+                            >
+                              {t("admin.resetPassword")}
+                            </button>
                             <button
                               onClick={() => openAction("delete", t("common.delete"), m.id)}
                               className="text-red-700 hover:underline dark:text-red-400"

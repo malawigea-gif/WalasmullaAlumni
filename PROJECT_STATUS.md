@@ -1,6 +1,6 @@
 # Project Status Report — Walasmulla Alumni Association Management System
 
-_Last updated: 2026-07-14 (accounts ledger + recording-permission change)_
+_Last updated: 2026-07-14 (thermal receipts, budget lines, admin password reset, login branding)_
 
 This document is a reference for future updates/handoff. It captures what exists, where it's deployed, and what's left to do.
 
@@ -113,6 +113,20 @@ No custom domain is configured — the app runs on the free platform subdomains 
   the treasurer who recorded it cannot approve their own entry
   (maker-checker), and the same person cannot approve twice. An entry is
   "fully approved" once it has 2 `AccountEntryApproval` rows.
+- Budget (same page): the treasurer defines item-wise budget lines
+  (`BudgetLine` — category, planned amount, year; `POST/GET
+  /accounts/budget-lines`, treasurer creates / executive+admin view). An
+  expense `AccountEntry` can optionally reference a `budgetLineId` — when it
+  does, it's treasurer-authorized alone and **skips the dual-approval
+  requirement entirely** (attempting to approve a budget-linked entry returns
+  409); income entries cannot be linked to a budget line. The budget list
+  shows planned/spent/remaining per line, computed live from linked entries.
+- Thermal-printer receipts (`frontend/src/lib/receipt.ts`, `printReceipt()`):
+  opens a browser print dialog styled for 80mm thermal paper
+  (`@page { size: 80mm auto }`). Wired into `MemberDetailPage` (Print Receipt
+  per fee-payment/donation row) and `AccountsManagementPage` (Print Voucher on
+  budget-linked expense rows only, since only those are treasurer-issued
+  "spending" the association needs a paper trail for at point of purchase).
 
 **Admin-only**
 - Admin Dashboard (`/admin`, `frontend/src/pages/admin/AdminDashboardPage.tsx`):
@@ -120,6 +134,13 @@ No custom domain is configured — the app runs on the free platform subdomains 
   actions, plus an audit log view
 - Block/unblock any member (`Member.status`); blocked members are rejected at
   login and their existing access token stops working on the next request
+- Reset a member's password (`POST /admin/members/:id/reset-password`):
+  generates a random temporary password, hashes and stores it, and returns
+  the plaintext once in the response for the admin to relay to the member
+  directly (call/message) — there's still no outbound email/SMS, so this is
+  the workaround for the "forgot password" flow (which only logs a request
+  server-side; see Known Limitations). Logged to `AuditLog` as
+  `password_reset`.
 - Soft-delete/restore any member (`Member.deletedAt`) — related records
   (payments, donations, attendance, etc.) are never orphaned since the row
   itself is kept; deleted members are excluded from the normal member
@@ -166,9 +187,13 @@ React SPA (Vercel)  →  Express API (Render)  →  PostgreSQL (Supabase)
 - `Message`, `MessageRecipient` — messages and per-recipient read status
 - `QRCode` — one unique QR token per member
 - `AccountEntry` — association ledger entry (type income/expense, description,
-  amount, entryDate, recordedBy — treasurer only); `AccountEntryApproval` —
-  one row per distinct approver (unique on entry+approver), 2 rows = fully
-  approved
+  amount, entryDate, recordedBy — treasurer only), optional `budgetLineId`;
+  `AccountEntryApproval` — one row per distinct approver (unique on
+  entry+approver), 2 rows = fully approved (skipped entirely when
+  `budgetLineId` is set)
+- `BudgetLine` — treasurer-defined budget item (category, plannedAmount,
+  year); linked `AccountEntry` expenses determine spent/remaining, computed
+  on read, not stored
 - `PrivilegeDelegation` — temporary executive-level access grants (member,
   granted-by admin, granted-at, revoked-at, is-active)
 - `AuditLog` — generic actor/target/action/reason/timestamp log for admin

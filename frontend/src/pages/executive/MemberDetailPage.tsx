@@ -2,11 +2,14 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { api } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
 import { ConfirmationBadge } from "../../components/ConfirmationBadge";
+import { printReceipt } from "../../lib/receipt";
 import type { Donation, FeePayment, LabourContribution, MeetingAttendance, Member } from "../../types";
 
 export default function MemberDetailPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const [member, setMember] = useState<Member | null>(null);
   const [payments, setPayments] = useState<FeePayment[]>([]);
@@ -109,6 +112,48 @@ export default function MemberDetailPage() {
     await loadAll();
   }
 
+  function issuedByName() {
+    return user?.profile?.fullName ?? user?.email ?? "-";
+  }
+
+  function handlePrintFeeReceipt(p: FeePayment) {
+    printReceipt({
+      associationName: t("app.name"),
+      title: t("receipt.feeTitle"),
+      receiptNoLabel: t("receipt.no"),
+      receiptNo: p.id.slice(-8).toUpperCase(),
+      dateLabel: t("receipt.date"),
+      date: new Date(p.paidDate).toLocaleDateString(),
+      lines: [
+        { label: t("receipt.member"), value: member?.profile?.fullName ?? member?.email ?? "-" },
+        { label: t("receipt.year"), value: String(p.year) },
+      ],
+      amountLabel: t("receipt.amount"),
+      amount: `Rs. ${p.amount}`,
+      issuedByLabel: t("receipt.issuedBy"),
+      issuedBy: issuedByName(),
+    });
+  }
+
+  function handlePrintDonationReceipt(d: Donation) {
+    printReceipt({
+      associationName: t("app.name"),
+      title: t("receipt.donationTitle"),
+      receiptNoLabel: t("receipt.no"),
+      receiptNo: d.id.slice(-8).toUpperCase(),
+      dateLabel: t("receipt.date"),
+      date: new Date(d.donatedDate).toLocaleDateString(),
+      lines: [
+        { label: t("receipt.member"), value: member?.profile?.fullName ?? member?.email ?? "-" },
+        { label: t("receipt.description"), value: d.description },
+      ],
+      amountLabel: t("receipt.amount"),
+      amount: d.amount ? `Rs. ${d.amount}` : "-",
+      issuedByLabel: t("receipt.issuedBy"),
+      issuedBy: issuedByName(),
+    });
+  }
+
   if (!member) return <p>{t("common.loading")}</p>;
 
   return (
@@ -181,6 +226,10 @@ export default function MemberDetailPage() {
               header: t("common.status"),
               render: (p) => <ConfirmCell confirmedAt={p.confirmedAt} onConfirm={() => handleConfirmFee(p.id)} />,
             },
+            {
+              header: t("common.actions"),
+              render: (p) => <PrintButton onClick={() => handlePrintFeeReceipt(p)} />,
+            },
           ]}
         />
       </section>
@@ -213,6 +262,10 @@ export default function MemberDetailPage() {
             {
               header: t("common.status"),
               render: (d) => <ConfirmCell confirmedAt={d.confirmedAt} onConfirm={() => handleConfirmDonation(d.id)} />,
+            },
+            {
+              header: t("common.actions"),
+              render: (d) => <PrintButton onClick={() => handlePrintDonationReceipt(d)} />,
             },
           ]}
         />
@@ -266,6 +319,19 @@ export default function MemberDetailPage() {
         />
       </section>
     </div>
+  );
+}
+
+function PrintButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+    >
+      {t("receipt.print")}
+    </button>
   );
 }
 

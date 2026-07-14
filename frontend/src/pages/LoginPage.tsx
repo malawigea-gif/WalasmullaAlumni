@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
+import associationCrest from "../assets/association-crest.png";
 
 export default function LoginPage() {
   const { t, i18n } = useTranslation();
@@ -32,7 +33,10 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
       <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow dark:bg-slate-900">
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{t("app.name")}</h1>
+          <div className="flex items-center gap-2">
+            <img src={associationCrest} alt="" className="h-10 w-10 rounded-full" />
+            <h1 className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{t("app.name")}</h1>
+          </div>
           <button
             onClick={() => i18n.changeLanguage(i18n.language === "si" ? "en" : "si")}
             className="text-xs text-slate-500 underline"

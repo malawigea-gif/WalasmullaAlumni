@@ -8,7 +8,8 @@ export type AuditAction =
   | "member_deleted"
   | "member_restored"
   | "delegation_granted"
-  | "delegation_revoked";
+  | "delegation_revoked"
+  | "password_reset";
 
 export interface Child {
   id: string;
@@ -171,6 +172,18 @@ export interface ExecutiveHistoryEntry {
 
 export type AccountEntryType = "income" | "expense";
 
+export interface BudgetLine {
+  id: string;
+  category: string;
+  plannedAmount: string;
+  year: number;
+  createdBy: string;
+  creator?: Member;
+  createdAt: string;
+  spent: string;
+  remaining: string;
+}
+
 export interface AccountEntryApprovalRecord {
   id: string;
   accountEntryId: string;
@@ -190,6 +203,8 @@ export interface AccountEntry {
   createdAt: string;
   approvals?: AccountEntryApprovalRecord[];
   isFullyApproved: boolean;
+  budgetLineId?: string | null;
+  budgetLine?: BudgetLine | null;
 }
 
 export interface ReportSummary {
