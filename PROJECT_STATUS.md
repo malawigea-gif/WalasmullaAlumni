@@ -267,8 +267,15 @@ payments/donations/labour/attendance/messaging." Changed to
 
 ## 8. Pending / Future Work
 
-- Migrate profile photo storage to an S3-compatible bucket (or Supabase Storage)
-  so uploads survive redeploys
+- ~~Migrate profile photo storage to an S3-compatible bucket (or Supabase Storage)
+  so uploads survive redeploys~~ — **partially done (2026-07-15, local dev):**
+  uploads now go through a `StorageProvider` interface
+  (`backend/src/lib/storage/`, driver selected via `STORAGE_DRIVER` env var)
+  instead of a hardcoded disk path in the route. Only `LocalDiskProvider` is
+  implemented so far — an S3/Supabase provider still needs to be written and
+  wired in via `STORAGE_DRIVER` before this is deployed again. Also fixed:
+  invalid/oversized uploads now return a proper `400` instead of falling
+  through to a `500`.
 - Register and wire up a custom domain (Vercel domain settings + DNS + update
   `CORS_ORIGIN` on Render)
 - Email and/or SMS notifications (e.g. real forgot-password emails, message
