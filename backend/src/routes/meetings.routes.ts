@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
-import { authenticate, requireElevatedAccess, requireExecutive } from "../middleware/auth";
+import { authenticate, requireElevatedAccess, requireExecutiveOrAdmin } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
-import { createMeetingSchema, scanAttendanceSchema } from "../schemas/meeting.schema";
+import { createMeetingSchema, scanAttendanceSchema, updateMeetingSchema } from "../schemas/meeting.schema";
 import { SAFE_MEMBER_SELECT } from "../utils/serialize";
 
 const router = Router();
@@ -24,11 +24,41 @@ router.get(
 
 router.post(
   "/",
-  requireExecutive,
+  requireExecutiveOrAdmin,
   validateBody(createMeetingSchema),
   asyncHandler(async (req, res) => {
     const meeting = await prisma.meeting.create({ data: req.body });
     res.status(201).json(meeting);
+  })
+);
+
+router.patch(
+  "/:id",
+  requireExecutiveOrAdmin,
+  validateBody(updateMeetingSchema),
+  asyncHandler(async (req, res) => {
+    const existing = await prisma.meeting.findUnique({ where: { id: req.params.id } });
+    if (!existing) throw new ApiError(404, "Meeting not found");
+
+    const meeting = await prisma.meeting.update({ where: { id: req.params.id }, data: req.body });
+    res.json(meeting);
+  })
+);
+
+router.delete(
+  "/:id",
+  requireExecutiveOrAdmin,
+  asyncHandler(async (req, res) => {
+    const existing = await prisma.meeting.findUnique({ where: { id: req.params.id } });
+    if (!existing) throw new ApiError(404, "Meeting not found");
+
+    const attendanceCount = await prisma.meetingAttendance.count({ where: { meetingId: req.params.id } });
+    if (attendanceCount > 0) {
+      throw new ApiError(409, "Cannot delete a meeting with recorded attendance");
+    }
+
+    await prisma.meeting.delete({ where: { id: req.params.id } });
+    res.status(204).send();
   })
 );
 

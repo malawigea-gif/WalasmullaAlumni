@@ -18,6 +18,7 @@ import AccountsPage from "./pages/AccountsPage";
 import MembersPage from "./pages/executive/MembersPage";
 import MemberDetailPage from "./pages/executive/MemberDetailPage";
 import ScannerPage from "./pages/executive/ScannerPage";
+import MeetingsPage from "./pages/executive/MeetingsPage";
 import SendMessagePage from "./pages/executive/SendMessagePage";
 import ReportsPage from "./pages/executive/ReportsPage";
 import ExecutivesPage from "./pages/executive/ExecutivesPage";
@@ -54,6 +55,7 @@ export default function App() {
 
           <Route element={<ProtectedRoute execOrAdminOnly />}>
             <Route path="/accounts/manage" element={<AccountsManagementPage />} />
+            <Route path="/meetings" element={<MeetingsPage />} />
           </Route>
 
           <Route element={<ProtectedRoute adminOnly />}>

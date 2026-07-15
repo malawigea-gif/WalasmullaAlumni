@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
-import { authenticate, requireExecutive } from "../middleware/auth";
+import { authenticate, requireExecutiveOrAdmin } from "../middleware/auth";
 import { asyncHandler } from "../utils/asyncHandler";
 
 const router = Router();
 
-router.use(authenticate, requireExecutive);
+router.use(authenticate, requireExecutiveOrAdmin);
 
 router.get(
   "/summary",

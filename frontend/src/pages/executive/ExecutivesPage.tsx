@@ -1,14 +1,18 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
-import type { ExecutiveHistoryEntry, ExecutivePositionRecord, ExecutivePositionType, Member } from "../../types";
+import { useAuth } from "../../context/AuthContext";
+import type { ExecutiveHistoryEntry, ExecutivePositionRecord, ExecutivePositionType, Member, PrivilegeDelegation } from "../../types";
 
 const POSITIONS: ExecutivePositionType[] = ["chairman", "vice_chairman", "secretary", "vice_secretary", "treasurer"];
 
 export default function ExecutivesPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [positions, setPositions] = useState<ExecutivePositionRecord[]>([]);
   const [history, setHistory] = useState<ExecutiveHistoryEntry[]>([]);
+  const [delegations, setDelegations] = useState<PrivilegeDelegation[]>([]);
   const [activeDialog, setActiveDialog] = useState<{ type: "appoint" | "remove"; position: ExecutivePositionType } | null>(
     null
   );
@@ -17,16 +21,33 @@ export default function ExecutivesPage() {
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [revokeError, setRevokeError] = useState<string | null>(null);
 
   async function loadAll() {
     const [positionsRes, historyRes] = await Promise.all([api.get("/executives"), api.get("/executives/history")]);
     setPositions(positionsRes.data);
     setHistory(historyRes.data);
+    if (isAdmin) {
+      const { data } = await api.get("/admin/delegations");
+      setDelegations(data);
+    }
   }
 
   useEffect(() => {
     loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function handleRevoke(delegationId: string) {
+    if (!window.confirm(t("executives.delegations.revokeConfirm") ?? "")) return;
+    setRevokeError(null);
+    try {
+      await api.post(`/admin/delegations/${delegationId}/revoke`, {});
+      await loadAll();
+    } catch (err: any) {
+      setRevokeError(err.response?.data?.error ?? "Action failed");
+    }
+  }
 
   useEffect(() => {
     if (!memberQuery) {
@@ -177,6 +198,46 @@ export default function ExecutivesPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {isAdmin && (
+        <section>
+          <h2 className="mb-2 text-lg font-semibold">{t("executives.delegations.title")}</h2>
+          {revokeError && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-700">{revokeError}</p>}
+          {delegations.filter((d) => d.isActive).length === 0 ? (
+            <p className="text-sm text-slate-500">{t("executives.delegations.noActiveDelegations")}</p>
+          ) : (
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800">
+                  <th className="py-2">{t("executives.delegations.grantedTo")}</th>
+                  <th className="py-2">{t("executives.delegations.grantedBy")}</th>
+                  <th className="py-2">{t("executives.delegations.grantedAt")}</th>
+                  <th className="py-2">{t("common.actions")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {delegations
+                  .filter((d) => d.isActive)
+                  .map((d) => (
+                    <tr key={d.id} className="border-b border-slate-100 dark:border-slate-800/50">
+                      <td className="py-2">{d.member.profile?.fullName ?? d.member.email}</td>
+                      <td className="py-2">{d.granter.profile?.fullName ?? d.granter.email}</td>
+                      <td className="py-2">{new Date(d.grantedAt).toLocaleString()}</td>
+                      <td className="py-2">
+                        <button
+                          onClick={() => handleRevoke(d.id)}
+                          className="text-red-700 hover:underline dark:text-red-400"
+                        >
+                          {t("executives.delegations.revoke")}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          )}
+        </section>
       )}
 
       <section>

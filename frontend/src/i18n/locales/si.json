@@ -11,6 +11,7 @@
     "inbox": "පණිවිඩ පෙට්ටිය",
     "members": "සාමාජික නාමාවලිය",
     "scanner": "QR ස්කෑනරය",
+    "meetings": "රැස්වීම්",
     "sendMessage": "පණිවිඩයක් යවන්න",
     "reports": "වාර්තා",
     "executives": "විධායක කළමනාකරණය",
@@ -135,7 +136,29 @@
     "startScanning": "ස්කෑන් කිරීම ආරම්භ කරන්න",
     "stopScanning": "ස්කෑන් කිරීම නවත්වන්න",
     "scanSuccess": "{{name}} සඳහා පැමිණීම සටහන් විය",
-    "cameraPermission": "QR කේත ස්කෑන් කිරීමට කැමරා ප්‍රවේශය ලබා දෙන්න."
+    "cameraPermission": "QR කේත ස්කෑන් කිරීමට කැමරා ප්‍රවේශය ලබා දෙන්න.",
+    "editMeeting": "රැස්වීම සංශෝධනය කරන්න",
+    "deleteMeeting": "රැස්වීම මකන්න",
+    "deleteConfirm": "මෙම රැස්වීම මකන්නද? මෙය අහෝසි කළ නොහැක.",
+    "deleteBlocked": "පැමිණීම් සටහන් ඇති රැස්වීමක් මකා දැමිය නොහැක."
+  },
+  "meetings": {
+    "title": "රැස්වීම්",
+    "create": "රැස්වීමක් එකතු කරන්න",
+    "meetingTitle": "මාතෘකාව",
+    "meetingDate": "දිනය සහ වේලාව",
+    "location": "ස්ථානය",
+    "type": "වර්ගය",
+    "types": {
+      "monthly": "මාසික රැස්වීම",
+      "committee": "කාරක සභා රැස්වීම"
+    },
+    "attendeeCount": "පැමිණි සංඛ්‍යාව",
+    "edit": "සංශෝධනය කරන්න",
+    "delete": "මකන්න",
+    "deleteConfirm": "මෙම රැස්වීම මකන්නද? මෙය අහෝසි කළ නොහැක.",
+    "deleteBlocked": "පැමිණීම් සටහන් ඇති රැස්වීමක් මකා දැමිය නොහැක.",
+    "noMeetings": "තවම රැස්වීම් නොමැත."
   },
   "messages": {
     "title": "පණිවිඩයක් යවන්න",
@@ -155,7 +178,17 @@
     "feeCollection": "වර්ෂය අනුව ගාස්තු එකතුව",
     "donationsTotal": "මුළු පරිත්‍යාග",
     "labourHours": "මුළු ශ්‍රම පැය",
-    "meetingAttendance": "රැස්වීම් පැමිණීම"
+    "meetingAttendance": "රැස්වීම් පැමිණීම",
+    "documents": {
+      "title": "වාර්තා ලේඛන",
+      "uploadTitle": "මාතෘකාව",
+      "uploadDate": "දිනය",
+      "uploadFile": "PDF ගොනුව",
+      "upload": "උඩුගත කරන්න",
+      "download": "බාගන්න",
+      "delete": "මකන්න",
+      "noDocuments": "තවම වාර්තා ලේඛන උඩුගත කර නොමැත."
+    }
   },
   "executives": {
     "title": "විධායක කළමනාකරණය",
@@ -175,7 +208,16 @@
       "treasurer": "භාණ්ඩාගාරික"
     },
     "actionAppointed": "පත් කරන ලදී",
-    "actionRemoved": "ඉවත් කරන ලදී"
+    "actionRemoved": "ඉවත් කරන ලදී",
+    "delegations": {
+      "title": "සක්‍රීය බලය පැවරීම්",
+      "grantedTo": "බලය පවරන ලද්දේ",
+      "grantedBy": "බලය පැවරුවේ",
+      "grantedAt": "බලය පැවරූ දිනය",
+      "revoke": "අහෝසි කරන්න",
+      "revokeConfirm": "මෙම සාමාජිකයාගේ තාවකාලික විධායක ප්‍රවේශය අහෝසි කරන්නද?",
+      "noActiveDelegations": "සක්‍රීය බලය පැවරීම් නොමැත."
+    }
   },
   "receipt": {
     "print": "රිසිට් පත මුද්‍රණය කරන්න",
@@ -211,7 +253,17 @@
     "plannedAmount": "සැලසුම් කළ මුදල",
     "spent": "වියදම් කළ",
     "remaining": "ඉතිරි",
-    "addBudgetLine": "අයවැය කාණ්ඩයක් එකතු කරන්න"
+    "addBudgetLine": "අයවැය කාණ්ඩයක් එකතු කරන්න",
+    "categories": {
+      "membership_fee": "සාමාජික ගාස්තු",
+      "donation": "පරිත්‍යාග",
+      "other_income": "වෙනත් ආදායම්",
+      "bank_interest": "බැංකු පොලී"
+    },
+    "balance": "වත්මන් ගිණුම් ශේෂය",
+    "incomeByCategory": "කාණ්ඩය අනුව ආදායම",
+    "releaseFunds": "මුදල් නිකුත් කිරීම",
+    "enterBankInterest": "බැංකු පොලී ඇතුලත් කිරීම"
   },
   "dashboard": {
     "welcome": "සාදරයෙන් පිළිගනිමු, {{name}}",

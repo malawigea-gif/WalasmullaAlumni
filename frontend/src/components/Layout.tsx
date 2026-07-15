@@ -85,6 +85,9 @@ export function Layout() {
               <NavLink to="/accounts/manage" className={navLinkClass}>
                 {t("nav.accountsManage")}
               </NavLink>
+              <NavLink to="/meetings" className={navLinkClass}>
+                {t("nav.meetings")}
+              </NavLink>
             </>
           )}
           {user?.role === "admin" && (

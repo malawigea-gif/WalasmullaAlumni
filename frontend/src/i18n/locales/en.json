@@ -11,6 +11,7 @@
     "inbox": "Inbox",
     "members": "Member Directory",
     "scanner": "QR Scanner",
+    "meetings": "Meetings",
     "sendMessage": "Send Message",
     "reports": "Reports",
     "executives": "Executive Management",
@@ -135,7 +136,29 @@
     "startScanning": "Start Scanning",
     "stopScanning": "Stop Scanning",
     "scanSuccess": "Attendance recorded for {{name}}",
-    "cameraPermission": "Please allow camera access to scan QR codes."
+    "cameraPermission": "Please allow camera access to scan QR codes.",
+    "editMeeting": "Edit Meeting",
+    "deleteMeeting": "Delete Meeting",
+    "deleteConfirm": "Delete this meeting? This cannot be undone.",
+    "deleteBlocked": "Cannot delete a meeting with recorded attendance."
+  },
+  "meetings": {
+    "title": "Meetings",
+    "create": "Add Meeting",
+    "meetingTitle": "Title",
+    "meetingDate": "Date & Time",
+    "location": "Location",
+    "type": "Type",
+    "types": {
+      "monthly": "Monthly Meeting",
+      "committee": "Executive Committee Meeting"
+    },
+    "attendeeCount": "Attendees",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this meeting? This cannot be undone.",
+    "deleteBlocked": "Cannot delete a meeting with recorded attendance.",
+    "noMeetings": "No meetings yet."
   },
   "messages": {
     "title": "Send Message",
@@ -155,7 +178,17 @@
     "feeCollection": "Fee Collection by Year",
     "donationsTotal": "Total Donations",
     "labourHours": "Total Labour Hours",
-    "meetingAttendance": "Meeting Attendance"
+    "meetingAttendance": "Meeting Attendance",
+    "documents": {
+      "title": "Report Documents",
+      "uploadTitle": "Title",
+      "uploadDate": "Date",
+      "uploadFile": "PDF File",
+      "upload": "Upload",
+      "download": "Download",
+      "delete": "Delete",
+      "noDocuments": "No report documents uploaded yet."
+    }
   },
   "executives": {
     "title": "Executive Management",
@@ -175,7 +208,16 @@
       "treasurer": "Treasurer"
     },
     "actionAppointed": "Appointed",
-    "actionRemoved": "Removed"
+    "actionRemoved": "Removed",
+    "delegations": {
+      "title": "Active Delegations",
+      "grantedTo": "Granted To",
+      "grantedBy": "Granted By",
+      "grantedAt": "Granted At",
+      "revoke": "Revoke",
+      "revokeConfirm": "Revoke this member's temporary executive access?",
+      "noActiveDelegations": "No active delegations."
+    }
   },
   "receipt": {
     "print": "Print Receipt",
@@ -211,7 +253,17 @@
     "plannedAmount": "Planned Amount",
     "spent": "Spent",
     "remaining": "Remaining",
-    "addBudgetLine": "Add Budget Line"
+    "addBudgetLine": "Add Budget Line",
+    "categories": {
+      "membership_fee": "Membership Fees",
+      "donation": "Donations",
+      "other_income": "Other Income",
+      "bank_interest": "Bank Interest"
+    },
+    "balance": "Current Balance",
+    "incomeByCategory": "Income by Category",
+    "releaseFunds": "Release Funds",
+    "enterBankInterest": "Enter Bank Interest"
   },
   "dashboard": {
     "welcome": "Welcome, {{name}}",

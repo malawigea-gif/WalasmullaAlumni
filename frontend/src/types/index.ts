@@ -116,11 +116,14 @@ export interface LabourContribution {
   createdAt: string;
 }
 
+export type MeetingType = "monthly" | "committee";
+
 export interface Meeting {
   id: string;
   title: string;
   meetingDate: string;
   location: string | null;
+  type: MeetingType;
   _count?: { attendances: number };
 }
 
@@ -150,6 +153,16 @@ export interface MessageRecipientEntry {
   };
 }
 
+export interface ReportDocument {
+  id: string;
+  title: string;
+  fileUrl: string;
+  reportDate: string;
+  uploadedBy: string;
+  uploader?: Member;
+  createdAt: string;
+}
+
 export interface ExecutivePositionRecord {
   id: string;
   position: ExecutivePositionType;
@@ -171,6 +184,7 @@ export interface ExecutiveHistoryEntry {
 }
 
 export type AccountEntryType = "income" | "expense";
+export type AccountEntryCategory = "membership_fee" | "donation" | "other_income" | "bank_interest";
 
 export interface BudgetLine {
   id: string;
@@ -195,6 +209,7 @@ export interface AccountEntryApprovalRecord {
 export interface AccountEntry {
   id: string;
   type: AccountEntryType;
+  category?: AccountEntryCategory | null;
   description: string;
   amount: string;
   entryDate: string;

@@ -63,6 +63,7 @@ router.post(
     const entry = await prisma.accountEntry.create({
       data: {
         type: req.body.type,
+        category: req.body.type === "income" ? req.body.category : null,
         description: req.body.description,
         amount: req.body.amount,
         entryDate: req.body.entryDate ?? new Date(),

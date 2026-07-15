@@ -14,6 +14,7 @@ import meetingRoutes from "./routes/meetings.routes";
 import messageRoutes from "./routes/messages.routes";
 import executiveRoutes from "./routes/executives.routes";
 import reportRoutes from "./routes/reports.routes";
+import reportDocumentRoutes from "./routes/reportDocuments.routes";
 import adminRoutes from "./routes/admin.routes";
 import accountRoutes from "./routes/accounts.routes";
 
@@ -39,6 +40,7 @@ export function createApp() {
   app.use("/api/messages", messageRoutes);
   app.use("/api/executives", executiveRoutes);
   app.use("/api/reports", reportRoutes);
+  app.use("/api/report-documents", reportDocumentRoutes);
   app.use("/api/admin", adminRoutes);
   app.use("/api/accounts", accountRoutes);
 

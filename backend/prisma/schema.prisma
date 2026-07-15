@@ -59,6 +59,18 @@ enum AccountEntryType {
   expense
 }
 
+enum AccountEntryCategory {
+  membership_fee
+  donation
+  other_income
+  bank_interest
+}
+
+enum MeetingType {
+  monthly
+  committee
+}
+
 model Member {
   id                  String   @id @default(cuid())
   email               String   @unique
@@ -107,6 +119,8 @@ model Member {
   recordedAccountEntries AccountEntry[]         @relation("RecordedByAccountEntries")
   accountEntryApprovals  AccountEntryApproval[] @relation("AccountEntryApprovals")
   createdBudgetLines     BudgetLine[]           @relation("CreatedByBudgetLines")
+
+  uploadedReportDocuments ReportDocument[] @relation("UploadedReportDocuments")
 
   @@map("members")
 }
@@ -228,14 +242,27 @@ model LabourContribution {
 }
 
 model Meeting {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   title       String
-  meetingDate DateTime @map("meeting_date")
+  meetingDate DateTime    @map("meeting_date")
   location    String?
+  type        MeetingType @default(monthly)
 
   attendances MeetingAttendance[]
 
   @@map("meetings")
+}
+
+model ReportDocument {
+  id         String   @id @default(cuid())
+  title      String
+  fileUrl    String   @map("file_url")
+  reportDate DateTime @map("report_date")
+  uploadedBy String   @map("uploaded_by")
+  uploader   Member   @relation("UploadedReportDocuments", fields: [uploadedBy], references: [id])
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("report_documents")
 }
 
 model MeetingAttendance {
@@ -306,8 +333,9 @@ model PrivilegeDelegation {
 }
 
 model AccountEntry {
-  id           String           @id @default(cuid())
+  id           String                @id @default(cuid())
   type         AccountEntryType
+  category     AccountEntryCategory?
   description  String
   amount       Decimal          @db.Decimal(12, 2)
   entryDate    DateTime         @map("entry_date")

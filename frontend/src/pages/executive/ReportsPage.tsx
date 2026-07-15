@@ -1,16 +1,51 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../../lib/api";
-import type { ReportSummary } from "../../types";
+import type { ReportDocument, ReportSummary } from "../../types";
 
 export default function ReportsPage() {
   const { t } = useTranslation();
   const [summary, setSummary] = useState<ReportSummary | null>(null);
+  const [documents, setDocuments] = useState<ReportDocument[]>([]);
+  const [docTitle, setDocTitle] = useState("");
+  const [docDate, setDocDate] = useState("");
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  function loadDocuments() {
+    api.get("/report-documents").then(({ data }) => setDocuments(data));
+  }
 
   useEffect(() => {
     api.get("/reports/summary").then(({ data }) => setSummary(data));
+    loadDocuments();
   }, []);
+
+  async function handleUpload(e: FormEvent) {
+    e.preventDefault();
+    if (!docFile) return;
+    setUploadError(null);
+    try {
+      const formData = new FormData();
+      formData.append("title", docTitle);
+      formData.append("reportDate", docDate);
+      formData.append("file", docFile);
+      await api.post("/report-documents", formData, { headers: { "Content-Type": "multipart/form-data" } });
+      setDocTitle("");
+      setDocDate("");
+      setDocFile(null);
+      loadDocuments();
+    } catch (err: any) {
+      setUploadError(err.response?.data?.error ?? "Upload failed");
+    }
+  }
+
+  async function handleDeleteDocument(id: string) {
+    if (!window.confirm(t("common.delete") ?? "")) return;
+    await api.delete(`/report-documents/${id}`);
+    loadDocuments();
+  }
 
   if (!summary) return <p>{t("common.loading")}</p>;
 
@@ -104,6 +139,88 @@ export default function ReportsPage() {
           rows={attendanceData.map((a) => [a.fullLabel, `${a.value}% (${a.attendeeCount})`])}
         />
       </ChartSection>
+
+      <section>
+        <h2 className="mb-2 text-lg font-semibold">{t("reports.documents.title")}</h2>
+        {uploadError && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-700">{uploadError}</p>}
+        <form onSubmit={handleUpload} className="mb-4 flex flex-wrap items-end gap-3">
+          <div>
+            <label className="block text-sm font-medium">{t("reports.documents.uploadTitle")}</label>
+            <input
+              required
+              value={docTitle}
+              onChange={(e) => setDocTitle(e.target.value)}
+              className="mt-1 rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">{t("reports.documents.uploadDate")}</label>
+            <input
+              required
+              type="date"
+              value={docDate}
+              onChange={(e) => setDocDate(e.target.value)}
+              className="mt-1 rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">{t("reports.documents.uploadFile")}</label>
+            <input
+              required
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
+              className="mt-1 block text-sm"
+            />
+          </div>
+          <button
+            type="submit"
+            className="rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
+          >
+            {t("reports.documents.upload")}
+          </button>
+        </form>
+
+        {documents.length === 0 ? (
+          <p className="text-sm text-slate-500">{t("reports.documents.noDocuments")}</p>
+        ) : (
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-800">
+                <th className="py-2">{t("reports.documents.uploadTitle")}</th>
+                <th className="py-2">{t("reports.documents.uploadDate")}</th>
+                <th className="py-2">{t("common.actions")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {documents.map((doc) => (
+                <tr key={doc.id} className="border-b border-slate-100 dark:border-slate-800/50">
+                  <td className="py-2">{doc.title}</td>
+                  <td className="py-2">{new Date(doc.reportDate).toLocaleDateString()}</td>
+                  <td className="py-2">
+                    <div className="flex gap-2">
+                      <a
+                        href={doc.fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-emerald-700 hover:underline dark:text-emerald-400"
+                      >
+                        {t("reports.documents.download")}
+                      </a>
+                      <button
+                        onClick={() => handleDeleteDocument(doc.id)}
+                        className="text-red-700 hover:underline dark:text-red-400"
+                      >
+                        {t("reports.documents.delete")}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
     </div>
   );
 }

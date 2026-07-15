@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { ExecutivePositionType } from "@prisma/client";
 import { prisma } from "../lib/prisma";
-import { authenticate, requireExecutive } from "../middleware/auth";
+import { authenticate, requireExecutiveOrAdmin } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
@@ -36,7 +36,7 @@ router.get(
 
 router.get(
   "/history",
-  requireExecutive,
+  requireExecutiveOrAdmin,
   asyncHandler(async (_req, res) => {
     const history = await prisma.executiveHistory.findMany({
       include: {
@@ -51,7 +51,7 @@ router.get(
 
 router.post(
   "/:position/appoint",
-  requireExecutive,
+  requireExecutiveOrAdmin,
   validateBody(appointExecutiveSchema),
   asyncHandler(async (req, res) => {
     const { position } = req.params;
@@ -110,7 +110,7 @@ router.post(
 
 router.post(
   "/:position/remove",
-  requireExecutive,
+  requireExecutiveOrAdmin,
   validateBody(removeExecutiveSchema),
   asyncHandler(async (req, res) => {
     const { position } = req.params;

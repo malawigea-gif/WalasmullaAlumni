@@ -3,7 +3,9 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../lib/api";
 import { printReceipt } from "../../lib/receipt";
-import type { AccountEntry, AccountEntryType, BudgetLine } from "../../types";
+import type { AccountEntry, AccountEntryCategory, AccountEntryType, BudgetLine } from "../../types";
+
+const INCOME_CATEGORIES: AccountEntryCategory[] = ["membership_fee", "donation", "other_income", "bank_interest"];
 
 export default function AccountsManagementPage() {
   const { t } = useTranslation();
@@ -14,10 +16,31 @@ export default function AccountsManagementPage() {
   const [budgetLines, setBudgetLines] = useState<BudgetLine[]>([]);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState<AccountEntryType>("income");
+  const [category, setCategory] = useState<AccountEntryCategory>("membership_fee");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [budgetLineId, setBudgetLineId] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const balance = entries
+    .filter((e) => e.isFullyApproved)
+    .reduce((sum, e) => sum + (e.type === "income" ? Number(e.amount) : -Number(e.amount)), 0);
+
+  const incomeByCategory = INCOME_CATEGORIES.map((c) => ({
+    category: c,
+    total: entries
+      .filter((e) => e.isFullyApproved && e.type === "income" && e.category === c)
+      .reduce((sum, e) => sum + Number(e.amount), 0),
+  }));
+
+  function openReleaseFunds() {
+    setType("expense");
+  }
+
+  function openEnterBankInterest() {
+    setType("income");
+    setCategory("bank_interest");
+  }
 
   const [budgetCategory, setBudgetCategory] = useState("");
   const [budgetPlannedAmount, setBudgetPlannedAmount] = useState("");
@@ -40,6 +63,7 @@ export default function AccountsManagementPage() {
     try {
       await api.post("/accounts/entries", {
         type,
+        category: type === "income" ? category : undefined,
         description,
         amount: Number(amount),
         budgetLineId: type === "expense" && budgetLineId ? budgetLineId : undefined,
@@ -104,7 +128,39 @@ export default function AccountsManagementPage() {
       <div>
         <h1 className="mb-4 text-2xl font-bold">{t("accounts.manageTitle")}</h1>
 
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+            <div className="text-xs font-medium text-slate-500">{t("accounts.balance")}</div>
+            <div className="mt-1 text-2xl font-semibold">Rs. {balance.toFixed(2)}</div>
+          </div>
+          {incomeByCategory.map((c) => (
+            <div key={c.category} className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+              <div className="text-xs font-medium text-slate-500">{t(`accounts.categories.${c.category}`)}</div>
+              <div className="mt-1 text-2xl font-semibold">Rs. {c.total.toFixed(2)}</div>
+            </div>
+          ))}
+        </div>
+
         {error && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+
+        {isTreasurer && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={openReleaseFunds}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+            >
+              {t("accounts.releaseFunds")}
+            </button>
+            <button
+              type="button"
+              onClick={openEnterBankInterest}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+            >
+              {t("accounts.enterBankInterest")}
+            </button>
+          </div>
+        )}
 
         {isTreasurer && (
           <form onSubmit={handleSubmit} className="mb-6 flex flex-wrap items-end gap-2">
@@ -122,6 +178,22 @@ export default function AccountsManagementPage() {
                 <option value="expense">{t("accounts.types.expense")}</option>
               </select>
             </div>
+            {type === "income" && (
+              <div>
+                <label className="block text-sm font-medium">{t("accounts.category")}</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as AccountEntryCategory)}
+                  className="mt-1 rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+                >
+                  {INCOME_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {t(`accounts.categories.${c}`)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="min-w-48 flex-1">
               <label className="block text-sm font-medium">{t("common.description")}</label>
               <input
@@ -173,8 +245,8 @@ export default function AccountsManagementPage() {
               <tr className="border-b border-slate-200 dark:border-slate-800">
                 <th className="py-2">{t("common.date")}</th>
                 <th className="py-2">{t("accounts.type")}</th>
-                <th className="py-2">{t("common.description")}</th>
                 <th className="py-2">{t("common.amount")}</th>
+                <th className="py-2">{t("common.description")}</th>
                 <th className="py-2">{t("accounts.recordedBy")}</th>
                 <th className="py-2">{t("common.status")}</th>
                 <th className="py-2">{t("common.actions")}</th>
@@ -201,13 +273,16 @@ export default function AccountsManagementPage() {
                         {t(`accounts.types.${entry.type}`)}
                       </span>
                     </td>
+                    <td className="py-2">Rs. {entry.amount}</td>
                     <td className="py-2">
                       {entry.description}
                       {entry.budgetLine && (
                         <span className="ml-1 text-xs text-slate-500">({entry.budgetLine.category})</span>
                       )}
+                      {entry.category && (
+                        <span className="ml-1 text-xs text-slate-500">({t(`accounts.categories.${entry.category}`)})</span>
+                      )}
                     </td>
-                    <td className="py-2">Rs. {entry.amount}</td>
                     <td className="py-2">{entry.recorder?.profile?.fullName ?? entry.recorder?.email ?? "-"}</td>
                     <td className="py-2">
                       {entry.isFullyApproved ? (
