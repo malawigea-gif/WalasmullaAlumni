@@ -7,6 +7,7 @@ import { ApiError } from "../utils/ApiError";
 import { toPublicMember } from "../utils/serialize";
 import { profileUpdateSchema } from "../schemas/profile.schema";
 import { uploadProfilePhoto } from "../lib/upload";
+import { storageProvider } from "../lib/storage";
 
 const router = Router();
 
@@ -58,7 +59,11 @@ router.post(
   uploadProfilePhoto.single("photo"),
   asyncHandler(async (req, res) => {
     if (!req.file) throw new ApiError(400, "No photo uploaded");
-    const profilePhotoUrl = `/uploads/${req.file.filename}`;
+    const profilePhotoUrl = await storageProvider.save({
+      buffer: req.file.buffer,
+      originalName: req.file.originalname,
+      mimetype: req.file.mimetype,
+    });
 
     await prisma.memberProfile.update({
       where: { memberId: req.user!.id },
