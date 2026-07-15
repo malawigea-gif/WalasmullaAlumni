@@ -1,6 +1,6 @@
 # Project Status Report — Walasmulla Alumni Association Management System
 
-_Last updated: 2026-07-14 (thermal receipts, budget lines, admin password reset, login branding)_
+_Last updated: 2026-07-16 (meetings management, report documents, delegation revoke from Executive Management, accounts income categories/balance)_
 
 This document is a reference for future updates/handoff. It captures what exists, where it's deployed, and what's left to do.
 
@@ -101,9 +101,22 @@ No custom domain is configured — the app runs on the free platform subdomains 
   donations, total labour hours, per-meeting attendance % (chart), with a table
   view fallback for accessibility
 - Executive Management: view current holders of all 5 positions, appoint/remove
-  (only a current executive can do this; appointing to an occupied position
+  (executives and admins can do this; appointing to an occupied position
   auto-removes the previous holder), full audit history (actor, target, action,
-  reason, timestamp)
+  reason, timestamp). Admins additionally see an "Active Delegations" section
+  here (reuses the existing admin-only delegation endpoints) to revoke a
+  member's temporary executive access without leaving this page.
+- Meetings (`/meetings`, executive/admin only): create, edit, and delete
+  meetings, each tagged as a monthly meeting or an executive committee
+  (කාරක සභා) meeting (`Meeting.type`). The same list feeds the QR Scanner
+  page's meeting selector, which also gained inline Edit/Delete controls
+  (executive/admin only) next to the dropdown — deleting a meeting is blocked
+  with a 409 if it already has recorded attendance, to avoid silently wiping
+  the attendance audit trail.
+- Reports tab: alongside the existing computed summary dashboard, executives
+  and admins can upload dated PDF report documents (title + date + file) and
+  download or delete them later — backed by a new `ReportDocument` table and
+  the same `StorageProvider` used for profile photos.
 - Accounts Management (`/accounts/manage`, executive/admin only — deliberately
   excludes delegated members): full income/expense ledger with a dual-approval
   workflow. Only the member currently holding the **treasurer** position can
@@ -113,6 +126,14 @@ No custom domain is configured — the app runs on the free platform subdomains 
   the treasurer who recorded it cannot approve their own entry
   (maker-checker), and the same person cannot approve twice. An entry is
   "fully approved" once it has 2 `AccountEntryApproval` rows.
+- Income entries now carry a `category` (`membership_fee` / `donation` /
+  `other_income` / `bank_interest`, required for `type=income`, independent
+  of the member-level `FeePayment`/`Donation` tables). The page shows a
+  current-balance stat tile (sum of fully-approved income minus fully-approved
+  expenses) and a per-category income total, computed client-side from the
+  entries already fetched. The entries table now shows Amount before
+  Description. Two quick-action buttons — "Release Funds" and "Enter Bank
+  Interest" — pre-fill the entry form's type/category (no new endpoints).
 - Budget (same page): the treasurer defines item-wise budget lines
   (`BudgetLine` — category, planned amount, year; `POST/GET
   /accounts/budget-lines`, treasurer creates / executive+admin view). An
@@ -248,6 +269,21 @@ excluded admins and delegated members even though this doc already documented
 delegation as granting "the same elevated permissions as an executive for
 payments/donations/labour/attendance/messaging." Changed to
 `requireElevatedAccess` in `backend/src/routes/meetings.routes.ts` to match.
+
+## 6b. Second `requireExecutive`-excludes-admin Bug (2026-07-16)
+
+Found and fixed the same bug class as 6a, in three more places:
+`POST /meetings` (meeting create), `GET /reports/summary`, and all of
+`executives.routes.ts` (`GET /history`, `POST /:position/appoint`,
+`POST /:position/remove`) were gated with `requireExecutive` (role must be
+exactly `"executive"`), which silently excluded the `admin` role. Since admin
+is documented throughout this file as having full executive-level authority,
+these were all switched to `requireExecutiveOrAdmin` (the middleware
+`accounts.routes.ts` already used correctly). Delegated members were already
+blocked by `requireExecutive` before and remain blocked after — no behavior
+change for them. If a future `requireExecutive` usage is added, double-check
+whether admin should be included — `requireExecutiveOrAdmin` is very likely
+the correct choice for anything executive-committee-level.
 
 ## 7. Known Limitations
 
