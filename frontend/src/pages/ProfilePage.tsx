@@ -35,6 +35,13 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!user) return;
     const p = user.profile;
@@ -105,6 +112,28 @@ export default function ProfilePage() {
     setChildren((c) => c.filter((child) => child.id !== childId));
   }
 
+  async function handleChangePassword(e: FormEvent) {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordMessage(null);
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError(t("profile.passwordMismatch"));
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      await api.post("/profile/me/password", { currentPassword, newPassword });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setPasswordMessage(t("profile.passwordChanged"));
+    } catch (err: any) {
+      setPasswordError(err.response?.data?.error ?? t("profile.passwordChangeFailed"));
+    } finally {
+      setPasswordSaving(false);
+    }
+  }
+
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -136,7 +165,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {message && <p className="mb-3 rounded bg-emerald-50 p-2 text-sm text-emerald-800">{message}</p>}
+      {message && <p className="mb-3 rounded bg-blue-50 p-2 text-sm text-blue-800">{message}</p>}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Text label={t("auth.fullName")} {...field("fullName")} />
@@ -174,7 +203,7 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+            className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >
             {t("common.save")}
           </button>
@@ -215,10 +244,59 @@ export default function ProfilePage() {
           </div>
           <button
             type="submit"
-            className="rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
+            className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
           >
             {t("profile.addChild")}
           </button>
+        </form>
+      </div>
+
+      <div className="mt-8">
+        <h2 className="mb-2 text-lg font-semibold">{t("profile.changePassword")}</h2>
+        {passwordMessage && <p className="mb-3 rounded bg-blue-50 p-2 text-sm text-blue-800">{passwordMessage}</p>}
+        {passwordError && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-700">{passwordError}</p>}
+        <form onSubmit={handleChangePassword} className="grid grid-cols-1 gap-4 sm:max-w-md">
+          <div>
+            <label className="block text-sm font-medium">{t("profile.currentPassword")}</label>
+            <input
+              type="password"
+              required
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">{t("profile.newPassword")}</label>
+            <input
+              type="password"
+              required
+              minLength={8}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">{t("profile.confirmNewPassword")}</label>
+            <input
+              type="password"
+              required
+              minLength={8}
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+            />
+          </div>
+          <div>
+            <button
+              type="submit"
+              disabled={passwordSaving}
+              className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+            >
+              {t("profile.changePassword")}
+            </button>
+          </div>
         </form>
       </div>
     </div>

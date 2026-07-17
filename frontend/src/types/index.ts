@@ -220,6 +220,7 @@ export interface AccountEntry {
   isFullyApproved: boolean;
   budgetLineId?: string | null;
   budgetLine?: BudgetLine | null;
+  receiptIssued: boolean;
 }
 
 export interface ReportSummary {

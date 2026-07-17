@@ -8,6 +8,7 @@ export const createAccountEntrySchema = z
     entryDate: z.coerce.date().optional(),
     budgetLineId: z.string().optional(),
     category: z.enum(["membership_fee", "donation", "other_income", "bank_interest"]).optional(),
+    receiptIssued: z.boolean().optional(),
   })
   .refine((d) => d.type !== "income" || !!d.category, {
     message: "category is required for income entries",

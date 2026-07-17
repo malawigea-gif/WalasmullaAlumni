@@ -86,6 +86,13 @@
     "childName": "දරුවාගේ නම",
     "photo": "පැතිකඩ ඡායාරූපය",
     "uploadPhoto": "ඡායාරූපය උඩුගත කරන්න",
+    "changePassword": "මුරපදය වෙනස් කරන්න",
+    "currentPassword": "වත්මන් මුරපදය",
+    "newPassword": "නව මුරපදය",
+    "confirmNewPassword": "නව මුරපදය තහවුරු කරන්න",
+    "passwordMismatch": "නව මුරපදය සහ තහවුරු කිරීම නොගැලපේ",
+    "passwordChanged": "මුරපදය සාර්ථකව වෙනස් කරන ලදී",
+    "passwordChangeFailed": "මුරපදය වෙනස් කිරීම අසාර්ථක විය",
     "scholarship": {
       "passed": "සමත්",
       "failed": "අසමත්",
@@ -223,6 +230,7 @@
     "print": "රිසිට් පත මුද්‍රණය කරන්න",
     "feeTitle": "සාමාජික ගාස්තු රිසිට් පත",
     "donationTitle": "පරිත්‍යාග රිසිට් පත",
+    "otherIncomeTitle": "ආදායම් රිසිට් පත",
     "voucherTitle": "වියදම් කුවිතාන්සිය",
     "no": "අංකය",
     "date": "දිනය",
@@ -263,7 +271,15 @@
     "balance": "වත්මන් ගිණුම් ශේෂය",
     "incomeByCategory": "කාණ්ඩය අනුව ආදායම",
     "releaseFunds": "මුදල් නිකුත් කිරීම",
-    "enterBankInterest": "බැංකු පොලී ඇතුලත් කිරීම"
+    "enterBankInterest": "බැංකු පොලී ඇතුලත් කිරීම",
+    "pos": {
+      "open": "POS කවුළුව",
+      "title": "POS - ඉක්මන් ඇතුලත් කිරීම",
+      "issueReceipt": "රිසිට් පත නිකුත් කරන්න",
+      "receiptSkipsApproval": "රිසිට් පතක් නිකුත් කළ ආදායම් සටහන් සඳහා අනුමැතිය අවශ්‍ය නොවේ.",
+      "saveAndPrint": "සුරකින්න සහ රිසිට් පත මුද්‍රණය කරන්න",
+      "todaysEntries": "අද දිනයේ සටහන්"
+    }
   },
   "dashboard": {
     "welcome": "සාදරයෙන් පිළිගනිමු, {{name}}",

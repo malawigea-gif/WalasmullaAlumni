@@ -23,6 +23,11 @@ export const profileUpdateSchema = z.object({
   phone: z.string().optional().nullable(),
 });
 
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
+
 export const childSchema = z.object({
   name: z.string().min(1),
   dateOfBirth: z.coerce.date().optional().nullable(),

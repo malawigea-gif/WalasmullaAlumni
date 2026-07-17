@@ -86,6 +86,13 @@
     "childName": "Child's Name",
     "photo": "Profile Photo",
     "uploadPhoto": "Upload Photo",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "passwordMismatch": "New password and confirmation do not match",
+    "passwordChanged": "Password changed successfully",
+    "passwordChangeFailed": "Failed to change password",
     "scholarship": {
       "passed": "Passed",
       "failed": "Failed",
@@ -223,6 +230,7 @@
     "print": "Print Receipt",
     "feeTitle": "Fee Payment Receipt",
     "donationTitle": "Donation Receipt",
+    "otherIncomeTitle": "Income Receipt",
     "voucherTitle": "Expense Voucher",
     "no": "No.",
     "date": "Date",
@@ -263,7 +271,15 @@
     "balance": "Current Balance",
     "incomeByCategory": "Income by Category",
     "releaseFunds": "Release Funds",
-    "enterBankInterest": "Enter Bank Interest"
+    "enterBankInterest": "Enter Bank Interest",
+    "pos": {
+      "open": "POS",
+      "title": "POS - Quick Entry",
+      "issueReceipt": "Issue Receipt",
+      "receiptSkipsApproval": "Income entries with a receipt issued do not require approval.",
+      "saveAndPrint": "Save & Print Receipt",
+      "todaysEntries": "Today's Entries"
+    }
   },
   "dashboard": {
     "welcome": "Welcome, {{name}}",

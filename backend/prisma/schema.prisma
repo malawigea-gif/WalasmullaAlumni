@@ -347,6 +347,10 @@ model AccountEntry {
   budgetLineId String?          @map("budget_line_id")
   budgetLine   BudgetLine?      @relation(fields: [budgetLineId], references: [id])
 
+  /// When set on an income entry (recorded via the POS quick-entry window), a receipt was
+  /// issued to the payer at the point of entry, so it needs no further approval.
+  receiptIssued Boolean         @default(false) @map("receipt_issued")
+
   approvals    AccountEntryApproval[]
 
   @@map("account_entries")

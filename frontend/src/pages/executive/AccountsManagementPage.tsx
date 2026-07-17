@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../lib/api";
 import { printReceipt } from "../../lib/receipt";
+import PosEntryModal from "./PosEntryModal";
 import type { AccountEntry, AccountEntryCategory, AccountEntryType, BudgetLine } from "../../types";
 
 const INCOME_CATEGORIES: AccountEntryCategory[] = ["membership_fee", "donation", "other_income", "bank_interest"];
@@ -21,6 +22,7 @@ export default function AccountsManagementPage() {
   const [amount, setAmount] = useState("");
   const [budgetLineId, setBudgetLineId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showPos, setShowPos] = useState(false);
 
   const balance = entries
     .filter((e) => e.isFullyApproved)
@@ -123,6 +125,26 @@ export default function AccountsManagementPage() {
     });
   }
 
+  function handlePrintReceipt(entry: AccountEntry) {
+    const titleKey = entry.category === "donation" ? "receipt.donationTitle" : entry.category === "membership_fee" ? "receipt.feeTitle" : "receipt.otherIncomeTitle";
+    printReceipt({
+      associationName: t("app.name"),
+      title: t(titleKey),
+      receiptNoLabel: t("receipt.no"),
+      receiptNo: entry.id.slice(-8).toUpperCase(),
+      dateLabel: t("receipt.date"),
+      date: new Date(entry.entryDate).toLocaleDateString(),
+      lines: [
+        { label: t("receipt.category"), value: entry.category ? t(`accounts.categories.${entry.category}`) : "-" },
+        { label: t("receipt.description"), value: entry.description },
+      ],
+      amountLabel: t("receipt.amount"),
+      amount: `Rs. ${entry.amount}`,
+      issuedByLabel: t("receipt.issuedBy"),
+      issuedBy: entry.recorder?.profile?.fullName ?? entry.recorder?.email ?? "-",
+    });
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -147,6 +169,13 @@ export default function AccountsManagementPage() {
           <div className="mb-3 flex flex-wrap gap-2">
             <button
               type="button"
+              onClick={() => setShowPos(true)}
+              className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+            >
+              {t("accounts.pos.open")}
+            </button>
+            <button
+              type="button"
               onClick={openReleaseFunds}
               className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
             >
@@ -161,6 +190,8 @@ export default function AccountsManagementPage() {
             </button>
           </div>
         )}
+
+        {showPos && <PosEntryModal entries={entries} onClose={() => setShowPos(false)} onSaved={load} />}
 
         {isTreasurer && (
           <form onSubmit={handleSubmit} className="mb-6 flex flex-wrap items-end gap-2">
@@ -231,7 +262,7 @@ export default function AccountsManagementPage() {
                 </select>
               </div>
             )}
-            <button type="submit" className="rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700">
+            <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700">
               {t("accounts.addEntry")}
             </button>
           </form>
@@ -257,7 +288,9 @@ export default function AccountsManagementPage() {
                 const approvalCount = entry.approvals?.length ?? 0;
                 const alreadyApprovedByMe = entry.approvals?.some((a) => a.approverId === user?.id) ?? false;
                 const isOwnEntry = entry.recordedBy === user?.id;
-                const canApprove = !entry.isFullyApproved && !isOwnEntry && !alreadyApprovedByMe && !entry.budgetLineId;
+                const isReceiptBypass = entry.type === "income" && entry.receiptIssued;
+                const canApprove =
+                  !entry.isFullyApproved && !isOwnEntry && !alreadyApprovedByMe && !entry.budgetLineId && !isReceiptBypass;
 
                 return (
                   <tr key={entry.id} className="border-b border-slate-100 dark:border-slate-800/50">
@@ -266,7 +299,7 @@ export default function AccountsManagementPage() {
                       <span
                         className={
                           entry.type === "income"
-                            ? "text-emerald-700 dark:text-emerald-400"
+                            ? "text-blue-700 dark:text-blue-400"
                             : "text-red-700 dark:text-red-400"
                         }
                       >
@@ -286,7 +319,7 @@ export default function AccountsManagementPage() {
                     <td className="py-2">{entry.recorder?.profile?.fullName ?? entry.recorder?.email ?? "-"}</td>
                     <td className="py-2">
                       {entry.isFullyApproved ? (
-                        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
                           {t("common.confirmed")}
                         </span>
                       ) : (
@@ -310,6 +343,15 @@ export default function AccountsManagementPage() {
                           <button
                             type="button"
                             onClick={() => handlePrintVoucher(entry)}
+                            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                          >
+                            {t("receipt.print")}
+                          </button>
+                        )}
+                        {isReceiptBypass && (
+                          <button
+                            type="button"
+                            onClick={() => handlePrintReceipt(entry)}
                             className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
                           >
                             {t("receipt.print")}
@@ -360,7 +402,7 @@ export default function AccountsManagementPage() {
                 className="mt-1 rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
               />
             </div>
-            <button type="submit" className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+            <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
               {t("accounts.addBudgetLine")}
             </button>
           </form>

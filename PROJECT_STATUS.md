@@ -1,6 +1,6 @@
 # Project Status Report — Walasmulla Alumni Association Management System
 
-_Last updated: 2026-07-16 (meetings management, report documents, delegation revoke from Executive Management, accounts income categories/balance)_
+_Last updated: 2026-07-17 (self-service password change, POS quick-entry window with receipt-based approval bypass for income)_
 
 This document is a reference for future updates/handoff. It captures what exists, where it's deployed, and what's left to do.
 
@@ -72,6 +72,10 @@ No custom domain is configured — the app runs on the free platform subdomains 
 - Association Accounts (`/accounts`, read-only): approved income/expense
   ledger entries, but only through the end of last calendar month — the
   current month's entries stay hidden from members even if already approved
+- Change own password (`/profile`, `POST /profile/me/password`): requires the
+  current password (bcrypt-verified) before hashing and storing the new one.
+  Available to every member, executive, and admin — not just admin-initiated
+  resets.
 
 **Executive-only**
 - Member directory: search, filter, pagination; view/edit any member's profile.
@@ -142,6 +146,20 @@ No custom domain is configured — the app runs on the free platform subdomains 
   requirement entirely** (attempting to approve a budget-linked entry returns
   409); income entries cannot be linked to a budget line. The budget list
   shows planned/spent/remaining per line, computed live from linked entries.
+- POS quick-entry window (`AccountsManagementPage` → "POS" button, opens
+  `PosEntryModal`, treasurer-only): a focused entry screen with type tiles
+  (membership fee / donation / other income / expense), description, amount,
+  date, and an "Issue Receipt" checkbox. Posts to the same `POST
+  /accounts/entries` endpoint. When the entry is **income** and the receipt
+  checkbox is checked, `AccountEntry.receiptIssued` is set `true` and the
+  entry needs no further approval (`computeIsFullyApproved` treats
+  `budgetLineId` and income-with-`receiptIssued` the same way — both skip the
+  2-approver workflow; attempting to approve either returns 409). Expense
+  entries can also have a receipt printed at point of entry, but
+  `receiptIssued` has no approval effect on expenses — only income. The modal
+  also shows a running list of the current treasurer's entries recorded that
+  day, and prints an 80mm thermal receipt immediately via `printReceipt()`
+  after a successful save (when the checkbox is checked).
 - Thermal-printer receipts (`frontend/src/lib/receipt.ts`, `printReceipt()`):
   opens a browser print dialog styled for 80mm thermal paper
   (`@page { size: 80mm auto }`). Wired into `MemberDetailPage` (Print Receipt
@@ -208,10 +226,11 @@ React SPA (Vercel)  →  Express API (Render)  →  PostgreSQL (Supabase)
 - `Message`, `MessageRecipient` — messages and per-recipient read status
 - `QRCode` — one unique QR token per member
 - `AccountEntry` — association ledger entry (type income/expense, description,
-  amount, entryDate, recordedBy — treasurer only), optional `budgetLineId`;
+  amount, entryDate, recordedBy — treasurer only), optional `budgetLineId`,
+  `receiptIssued` (bool, only meaningful for income — set via the POS window);
   `AccountEntryApproval` — one row per distinct approver (unique on
   entry+approver), 2 rows = fully approved (skipped entirely when
-  `budgetLineId` is set)
+  `budgetLineId` is set, or when the entry is income with `receiptIssued`)
 - `BudgetLine` — treasurer-defined budget item (category, plannedAmount,
   year); linked `AccountEntry` expenses determine spent/remaining, computed
   on read, not stored

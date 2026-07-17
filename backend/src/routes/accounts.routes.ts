@@ -11,8 +11,13 @@ const router = Router();
 
 router.use(authenticate);
 
-function computeIsFullyApproved(entry: { budgetLineId: string | null; approvals: unknown[] }) {
-  return !!entry.budgetLineId || entry.approvals.length >= 2;
+function computeIsFullyApproved(entry: {
+  type: string;
+  budgetLineId: string | null;
+  receiptIssued: boolean;
+  approvals: unknown[];
+}) {
+  return !!entry.budgetLineId || (entry.type === "income" && entry.receiptIssued) || entry.approvals.length >= 2;
 }
 
 router.get(
@@ -69,6 +74,7 @@ router.post(
         entryDate: req.body.entryDate ?? new Date(),
         recordedBy: req.user!.id,
         budgetLineId: req.body.budgetLineId ?? null,
+        receiptIssued: req.body.type === "income" && !!req.body.receiptIssued,
       },
       include: { budgetLine: true },
     });
@@ -87,6 +93,9 @@ router.post(
     if (!entry) throw new ApiError(404, "Account entry not found");
     if (entry.budgetLineId) {
       throw new ApiError(409, "Budget-linked expenses are treasurer-authorized and do not require approval");
+    }
+    if (entry.type === "income" && entry.receiptIssued) {
+      throw new ApiError(409, "This entry already has a receipt issued and does not require approval");
     }
     if (entry.recordedBy === req.user!.id) {
       throw new ApiError(403, "You cannot approve an entry you recorded yourself");
