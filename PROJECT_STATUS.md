@@ -1,6 +1,6 @@
 # Project Status Report — Walasmulla Alumni Association Management System
 
-_Last updated: 2026-07-17 (self-service password change, POS quick-entry window with receipt-based approval bypass for income)_
+_Last updated: 2026-07-18 (membership types/status, admin notes, meeting labour sessions with auto-broadcast, redesigned accounts cashbook)_
 
 This document is a reference for future updates/handoff. It captures what exists, where it's deployed, and what's left to do.
 
@@ -117,6 +117,17 @@ No custom domain is configured — the app runs on the free platform subdomains 
   (executive/admin only) next to the dropdown — deleting a meeting is blocked
   with a 409 if it already has recorded attendance, to avoid silently wiping
   the attendance audit trail.
+- Meetings can optionally include a labour-contribution session
+  (`Meeting.hasLabourSession` + `Meeting.labourHours`, set from the create/edit
+  form). When set, scanning a member's QR code for that meeting
+  (`POST /meetings/:id/attendance/scan`) creates both the `MeetingAttendance`
+  row and a matching `LabourContribution` row (description
+  `"Meeting attendance: <title>"`, hours = `Meeting.labourHours`) in a single
+  transaction — one scan records both. Creating a meeting also fires an
+  automatic broadcast message (`backend/src/services/message.service.ts`,
+  `sendBroadcastMessage`) to every member's inbox announcing the date/location
+  and, if applicable, the labour-session hours; failures to send are logged
+  but don't block meeting creation.
 - Reports tab: alongside the existing computed summary dashboard, executives
   and admins can upload dated PDF report documents (title + date + file) and
   download or delete them later — backed by a new `ReportDocument` table and
@@ -130,14 +141,28 @@ No custom domain is configured — the app runs on the free platform subdomains 
   the treasurer who recorded it cannot approve their own entry
   (maker-checker), and the same person cannot approve twice. An entry is
   "fully approved" once it has 2 `AccountEntryApproval` rows.
-- Income entries now carry a `category` (`membership_fee` / `donation` /
-  `other_income` / `bank_interest`, required for `type=income`, independent
-  of the member-level `FeePayment`/`Donation` tables). The page shows a
-  current-balance stat tile (sum of fully-approved income minus fully-approved
-  expenses) and a per-category income total, computed client-side from the
-  entries already fetched. The entries table now shows Amount before
-  Description. Two quick-action buttons — "Release Funds" and "Enter Bank
-  Interest" — pre-fill the entry form's type/category (no new endpoints).
+- Every `AccountEntry` carries a `category` (required for both income and
+  expense, independent of the member-level `FeePayment`/`Donation` tables) and
+  a `paymentMethod` (`cash` / `bank`). Income categories: `membership_fee`,
+  `aid`, `fine`. Expense categories: `petty_cash`, `project`, `bank_payment`
+  (`backend/src/schemas/account.schema.ts` validates category against type;
+  `frontend/src/lib/accountCategories.ts` is the shared category/payment-method
+  list). The page shows a current-balance stat tile (sum of fully-approved
+  income minus fully-approved expenses) and a per-category income total,
+  computed client-side from the entries already fetched. A "Release Funds"
+  quick-action button pre-fills the entry form's type/category (no new
+  endpoints).
+- The flat entries table was replaced with a cashbook layout: a **Receipts**
+  table (one row per date with fully-approved income that day: Membership
+  Fees / Aid / Fines / Total / Bank Deposits / running Cash Balance / running
+  Bank Balance, the latter two computed cumulatively over every approved
+  entry in ascending date order) and a **Payments** table (one row per
+  fully-approved expense: Date / Description / Petty Cash / Project / Bank
+  Payment / Paid From Bank, computed by putting the entry's amount in the
+  column matching its category and payment method). A separate **Pending
+  Approval** table below keeps the old flat list (with the Approve action)
+  for entries not yet fully approved. An **Issued Receipts** list surfaces
+  income entries recorded with `receiptIssued` set.
 - Budget (same page): the treasurer defines item-wise budget lines
   (`BudgetLine` — category, planned amount, year; `POST/GET
   /accounts/budget-lines`, treasurer creates / executive+admin view). An
@@ -196,6 +221,23 @@ No custom domain is configured — the app runs on the free platform subdomains 
   messaging, but not admin-only actions (block/delete/delegate)
 - Every block/unblock/delete/restore/delegate/revoke action is written to a
   generic `AuditLog` table (actor, target, action, reason, timestamp)
+- Membership Type & Status: every member has a `membershipType`
+  (`annual` / `honorary` / `exemplary` / `life`, admin-assignable from the
+  Admin Dashboard's "Change Type" action). Only `annual` members have a
+  meaningful `membershipStatus` (`active` / `inactive` / `resigned`) — every
+  other type is always treated as active. Admin can mark an annual member
+  "Resigned" or "Reactivate" them (`POST /admin/members/:id/{resign,reactivate}`);
+  both are rejected with 400 for non-annual members. Switching a member's type
+  away from `annual` always resets their status back to `active`. A member is
+  auto-flagged `inactive` (`backend/src/services/inactivity.service.ts`,
+  `recomputeInactivity`) after missing 4+ consecutive monthly meetings held
+  since their last status change (run on Admin Dashboard load via
+  `POST /admin/members/recompute-inactivity`, and available to call from a
+  scheduler if one is added later).
+- Admin Notes: free-text notes on a member's profile, visible only to admins
+  (`Member.adminNotes`, `GET`/`PUT /admin/members/:id/notes`), editable from
+  that member's detail page (`/members/:id`). Deliberately stripped out of
+  `toPublicMember()` so it never leaks into any non-admin API response.
 
 ## 5. Architecture Summary
 
@@ -212,22 +254,35 @@ React SPA (Vercel)  →  Express API (Render)  →  PostgreSQL (Supabase)
 
 **Database entities** (see `backend/prisma/schema.prisma` for full field lists):
 
-- `Member` — account/auth record (email, password hash, role, executive position)
+- `Member` — account/auth record (email, password hash, role, executive
+  position), plus `membershipType` (annual/honorary/exemplary/life,
+  default annual), `membershipStatus` (active/inactive/resigned, default
+  active, meaningful only for annual members) with
+  `membershipStatusUpdatedAt`, and `adminNotes` (admin-only free text,
+  stripped from `toPublicMember()`)
 - `MemberProfile` — one-to-one extended profile fields
 - `Child` — one-to-many, a member's children
 - `ExecutivePosition` — the 5 fixed positions and their current holder
 - `ExecutiveHistory` — append-only audit log of appoint/remove actions
 - `FeePayment`, `Donation`, `LabourContribution` — per-member financial/contribution
   records; each has `recordedBy` (who logged it) plus `confirmedBy`/`confirmedAt`
-  (who verified it, and when — null until an executive/admin/delegated member confirms)
+  (who verified it, and when — null until an executive/admin/delegated member confirms).
+  `LabourContribution` rows are also created automatically by a meeting's
+  labour-session QR scan (see Meetings below)
 - `Meeting`, `MeetingAttendance` — meetings and who attended (via QR scan);
   `MeetingAttendance` also carries `confirmedBy`/`confirmedAt` for the same
-  confirmation workflow
+  confirmation workflow. `Meeting` additionally carries `hasLabourSession`
+  (bool) and `labourHours` (decimal) — when set, an attendance scan for that
+  meeting also creates a matching `LabourContribution`, and creating the
+  meeting fires an automatic broadcast `Message`
 - `Message`, `MessageRecipient` — messages and per-recipient read status
 - `QRCode` — one unique QR token per member
 - `AccountEntry` — association ledger entry (type income/expense, description,
-  amount, entryDate, recordedBy — treasurer only), optional `budgetLineId`,
-  `receiptIssued` (bool, only meaningful for income — set via the POS window);
+  amount, entryDate, recordedBy — treasurer only), `category` (required for
+  both income and expense: `membership_fee`/`aid`/`fine` for income,
+  `petty_cash`/`project`/`bank_payment` for expense) and `paymentMethod`
+  (`cash`/`bank`, default cash), optional `budgetLineId`, `receiptIssued`
+  (bool, only meaningful for income — set via the POS window);
   `AccountEntryApproval` — one row per distinct approver (unique on
   entry+approver), 2 rows = fully approved (skipped entirely when
   `budgetLineId` is set, or when the entry is income with `receiptIssued`)
@@ -237,7 +292,8 @@ React SPA (Vercel)  →  Express API (Render)  →  PostgreSQL (Supabase)
 - `PrivilegeDelegation` — temporary executive-level access grants (member,
   granted-by admin, granted-at, revoked-at, is-active)
 - `AuditLog` — generic actor/target/action/reason/timestamp log for admin
-  actions (block, unblock, delete, restore, delegation grant/revoke)
+  actions (block, unblock, delete, restore, delegation grant/revoke,
+  membership type changed, member resigned/reactivated)
 
 ## 6. Deployment Notes
 
