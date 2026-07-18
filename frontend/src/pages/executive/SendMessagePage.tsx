@@ -61,7 +61,7 @@ export default function SendMessagePage() {
     <div>
       <h1 className="mb-4 text-2xl font-bold">{t("messages.title")}</h1>
 
-      {status && <p className="mb-3 rounded bg-emerald-50 p-2 text-sm text-emerald-800">{status}</p>}
+      {status && <p className="mb-3 rounded bg-blue-50 p-2 text-sm text-blue-800">{status}</p>}
       {error && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-700">{error}</p>}
 
       <form onSubmit={handleSubmit} className="max-w-lg space-y-3">
@@ -98,8 +98,8 @@ export default function SendMessagePage() {
                         setMemberQuery(m.profile?.fullName ?? m.email);
                         setMemberOptions([]);
                       }}
-                      className={`block w-full px-3 py-2 text-left text-sm hover:bg-emerald-50 dark:hover:bg-slate-800 ${
-                        recipientMemberId === m.id ? "bg-emerald-50 dark:bg-slate-800" : ""
+                      className={`block w-full px-3 py-2 text-left text-sm hover:bg-blue-50 dark:hover:bg-slate-800 ${
+                        recipientMemberId === m.id ? "bg-blue-50 dark:bg-slate-800" : ""
                       }`}
                     >
                       {m.profile?.fullName ?? m.email} ({m.email})
@@ -156,7 +156,7 @@ export default function SendMessagePage() {
         <button
           type="submit"
           disabled={sending || (recipientType === "individual" && !recipientMemberId)}
-          className="rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+          className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
           {t("messages.send")}
         </button>

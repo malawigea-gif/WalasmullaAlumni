@@ -27,6 +27,8 @@ export default function ScannerPage() {
   const [editDate, setEditDate] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [editType, setEditType] = useState<MeetingType>("monthly");
+  const [editHasLabourSession, setEditHasLabourSession] = useState(false);
+  const [editLabourHours, setEditLabourHours] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
 
   function loadMeetings() {
@@ -45,6 +47,8 @@ export default function ScannerPage() {
     setEditDate(toDatetimeLocal(m.meetingDate));
     setEditLocation(m.location ?? "");
     setEditType(m.type);
+    setEditHasLabourSession(m.hasLabourSession);
+    setEditLabourHours(m.labourHours ?? "");
     setEditError(null);
   }
 
@@ -57,6 +61,8 @@ export default function ScannerPage() {
         meetingDate: new Date(editDate).toISOString(),
         location: editLocation || null,
         type: editType,
+        hasLabourSession: editHasLabourSession,
+        labourHours: editHasLabourSession ? Number(editLabourHours) : null,
       });
       setEditingId(null);
       loadMeetings();
@@ -82,7 +88,13 @@ export default function ScannerPage() {
     try {
       const { data } = await api.post(`/meetings/${selectedMeetingId}/attendance/scan`, { qrToken: decodedText });
       setStatusIsError(false);
-      setStatusMessage(t("scanner.scanSuccess", { name: data.member?.profile?.fullName ?? data.memberId }));
+      const meeting = meetings.find((m) => m.id === selectedMeetingId);
+      const name = data.member?.profile?.fullName ?? data.memberId;
+      setStatusMessage(
+        meeting?.hasLabourSession
+          ? t("scanner.scanSuccessWithLabour", { name, hours: meeting.labourHours })
+          : t("scanner.scanSuccess", { name })
+      );
     } catch (err: any) {
       setStatusIsError(true);
       setStatusMessage(err.response?.data?.error ?? "Scan failed");
@@ -134,6 +146,7 @@ export default function ScannerPage() {
             {meetings.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.title} ({new Date(m.meetingDate).toLocaleDateString()}) — {t(`meetings.types.${m.type}`)}
+                {m.hasLabourSession ? ` — ${t("meetings.hasLabourSession")} (${m.labourHours}h)` : ""}
               </option>
             ))}
           </select>
@@ -163,7 +176,7 @@ export default function ScannerPage() {
           <button
             onClick={startScanning}
             disabled={!selectedMeetingId}
-            className="rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+            className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {t("scanner.startScanning")}
           </button>
@@ -199,7 +212,27 @@ export default function ScannerPage() {
               <option value="monthly">{t("meetings.types.monthly")}</option>
               <option value="committee">{t("meetings.types.committee")}</option>
             </select>
-            <button type="submit" className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={editHasLabourSession}
+                onChange={(e) => setEditHasLabourSession(e.target.checked)}
+              />
+              {t("meetings.hasLabourSession")}
+            </label>
+            {editHasLabourSession && (
+              <input
+                required
+                type="number"
+                min="0.5"
+                step="0.5"
+                value={editLabourHours}
+                onChange={(e) => setEditLabourHours(e.target.value)}
+                placeholder={t("meetings.labourHours") ?? ""}
+                className="w-24 rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+              />
+            )}
+            <button type="submit" className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
               {t("common.save")}
             </button>
             <button type="button" onClick={() => setEditingId(null)} className="rounded-md border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700">
@@ -210,7 +243,7 @@ export default function ScannerPage() {
       )}
 
       {statusMessage && (
-        <p className={`mb-3 rounded p-2 text-sm ${statusIsError ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`}>
+        <p className={`mb-3 rounded p-2 text-sm ${statusIsError ? "bg-red-50 text-red-700" : "bg-blue-50 text-blue-800"}`}>
           {statusMessage}
         </p>
       )}

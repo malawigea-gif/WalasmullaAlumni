@@ -30,7 +30,7 @@ export default function QrCodePage() {
           <img src={qrImage} alt="QR code" className="h-64 w-64 rounded-lg border border-slate-200 dark:border-slate-800" />
           <button
             onClick={handleDownload}
-            className="mt-4 rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
+            className="mt-4 rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
           >
             {t("qr.download")}
           </button>

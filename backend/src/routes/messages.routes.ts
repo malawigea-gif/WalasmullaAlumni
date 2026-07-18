@@ -7,6 +7,7 @@ import { ApiError } from "../utils/ApiError";
 import { sendMessageSchema } from "../schemas/message.schema";
 import { Prisma } from "@prisma/client";
 import { SAFE_MEMBER_SELECT } from "../utils/serialize";
+import { sendBroadcastMessage } from "../services/message.service";
 
 const router = Router();
 
@@ -19,6 +20,12 @@ router.post(
   asyncHandler(async (req, res) => {
     const { subject, body, recipientType, recipientMemberId, recipientFilter } = req.body;
 
+    if (recipientType === "broadcast") {
+      const message = await sendBroadcastMessage({ senderId: req.user!.id, subject, body });
+      res.status(201).json(message);
+      return;
+    }
+
     let recipientIds: string[] = [];
 
     if (recipientType === "individual") {
@@ -26,7 +33,7 @@ router.post(
       const target = await prisma.member.findUnique({ where: { id: recipientMemberId } });
       if (!target || target.deletedAt) throw new ApiError(404, "Recipient member not found");
       recipientIds = [recipientMemberId];
-    } else if (recipientType === "group") {
+    } else {
       const where: Prisma.MemberWhereInput = {
         deletedAt: null,
         profile: {
@@ -39,9 +46,6 @@ router.post(
       const targets = await prisma.member.findMany({ where, select: { id: true } });
       recipientIds = targets.map((m) => m.id);
       if (recipientIds.length === 0) throw new ApiError(400, "No members match the given group filter");
-    } else {
-      const targets = await prisma.member.findMany({ where: { deletedAt: null }, select: { id: true } });
-      recipientIds = targets.map((m) => m.id);
     }
 
     const message = await prisma.message.create({

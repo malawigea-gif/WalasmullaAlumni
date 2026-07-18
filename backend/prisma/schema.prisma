@@ -27,6 +27,9 @@ enum AuditAction {
   delegation_granted
   delegation_revoked
   password_reset
+  membership_type_changed
+  member_resigned
+  member_reactivated
 }
 
 enum ExecutivePositionType {
@@ -61,14 +64,34 @@ enum AccountEntryType {
 
 enum AccountEntryCategory {
   membership_fee
-  donation
-  other_income
-  bank_interest
+  aid
+  fine
+  petty_cash
+  project
+  bank_payment
+}
+
+enum PaymentMethod {
+  cash
+  bank
 }
 
 enum MeetingType {
   monthly
   committee
+}
+
+enum MembershipType {
+  annual
+  honorary
+  exemplary
+  life
+}
+
+enum MembershipStatus {
+  active
+  inactive
+  resigned
 }
 
 model Member {
@@ -81,6 +104,11 @@ model Member {
   status              MemberStatus @default(active)
   deletedAt           DateTime? @map("deleted_at")
   createdAt           DateTime @default(now()) @map("created_at")
+
+  adminNotes          String?  @map("admin_notes")
+  membershipType      MembershipType @default(annual) @map("membership_type")
+  membershipStatus    MembershipStatus @default(active) @map("membership_status")
+  membershipStatusUpdatedAt DateTime @default(now()) @map("membership_status_updated_at")
 
   profile             MemberProfile?
   children            Child[]
@@ -242,11 +270,13 @@ model LabourContribution {
 }
 
 model Meeting {
-  id          String      @id @default(cuid())
-  title       String
-  meetingDate DateTime    @map("meeting_date")
-  location    String?
-  type        MeetingType @default(monthly)
+  id               String      @id @default(cuid())
+  title            String
+  meetingDate      DateTime    @map("meeting_date")
+  location         String?
+  type             MeetingType @default(monthly)
+  hasLabourSession Boolean     @default(false) @map("has_labour_session")
+  labourHours      Decimal?    @db.Decimal(5, 2) @map("labour_hours")
 
   attendances MeetingAttendance[]
 
@@ -333,9 +363,10 @@ model PrivilegeDelegation {
 }
 
 model AccountEntry {
-  id           String                @id @default(cuid())
-  type         AccountEntryType
-  category     AccountEntryCategory?
+  id            String                @id @default(cuid())
+  type          AccountEntryType
+  category      AccountEntryCategory?
+  paymentMethod PaymentMethod         @default(cash) @map("payment_method")
   description  String
   amount       Decimal          @db.Decimal(12, 2)
   entryDate    DateTime         @map("entry_date")

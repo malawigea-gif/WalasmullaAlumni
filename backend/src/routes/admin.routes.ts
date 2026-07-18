@@ -8,7 +8,8 @@ import { validateBody } from "../middleware/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { toPublicMember, SAFE_MEMBER_SELECT } from "../utils/serialize";
-import { adminActionSchema } from "../schemas/admin.schema";
+import { adminActionSchema, adminNotesSchema, setMembershipTypeSchema } from "../schemas/admin.schema";
+import { recomputeInactivity } from "../services/inactivity.service";
 
 const router = Router();
 
@@ -231,6 +232,125 @@ router.post(
     ]);
 
     res.status(204).send();
+  })
+);
+
+router.get(
+  "/members/:id/notes",
+  asyncHandler(async (req, res) => {
+    const member = await prisma.member.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, adminNotes: true },
+    });
+    if (!member) throw new ApiError(404, "Member not found");
+    res.json({ adminNotes: member.adminNotes });
+  })
+);
+
+router.put(
+  "/members/:id/notes",
+  validateBody(adminNotesSchema),
+  asyncHandler(async (req, res) => {
+    const target = await prisma.member.findUnique({ where: { id: req.params.id } });
+    if (!target) throw new ApiError(404, "Member not found");
+
+    const updated = await prisma.member.update({
+      where: { id: req.params.id },
+      data: { adminNotes: req.body.adminNotes ?? null },
+      select: { id: true, adminNotes: true },
+    });
+    res.json(updated);
+  })
+);
+
+router.post(
+  "/members/:id/membership-type",
+  validateBody(setMembershipTypeSchema),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const target = await prisma.member.findUnique({ where: { id } });
+    if (!target || target.deletedAt) throw new ApiError(404, "Member not found");
+
+    const data: Prisma.MemberUpdateInput = { membershipType: req.body.membershipType };
+    if (req.body.membershipType !== "annual" && target.membershipStatus !== "active") {
+      data.membershipStatus = "active";
+      data.membershipStatusUpdatedAt = new Date();
+    }
+
+    const [member] = await prisma.$transaction([
+      prisma.member.update({ where: { id }, data }),
+      prisma.auditLog.create({
+        data: {
+          actorId: req.user!.id,
+          targetId: id,
+          action: "membership_type_changed",
+          reason: req.body.reason ?? null,
+        },
+      }),
+    ]);
+
+    res.json(toPublicMember(member));
+  })
+);
+
+router.post(
+  "/members/:id/resign",
+  validateBody(adminActionSchema),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const target = await prisma.member.findUnique({ where: { id } });
+    if (!target || target.deletedAt) throw new ApiError(404, "Member not found");
+    if (target.membershipType !== "annual")
+      throw new ApiError(400, "Only annual memberships can be marked resigned");
+    if (target.membershipStatus === "resigned") throw new ApiError(409, "Member has already resigned");
+
+    const [member] = await prisma.$transaction([
+      prisma.member.update({
+        where: { id },
+        data: { membershipStatus: "resigned", membershipStatusUpdatedAt: new Date() },
+      }),
+      prisma.auditLog.create({
+        data: { actorId: req.user!.id, targetId: id, action: "member_resigned", reason: req.body.reason ?? null },
+      }),
+    ]);
+
+    res.json(toPublicMember(member));
+  })
+);
+
+router.post(
+  "/members/:id/reactivate",
+  validateBody(adminActionSchema),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const target = await prisma.member.findUnique({ where: { id } });
+    if (!target || target.deletedAt) throw new ApiError(404, "Member not found");
+    if (target.membershipType !== "annual")
+      throw new ApiError(400, "Only annual memberships can be reactivated");
+    if (target.membershipStatus === "active") throw new ApiError(409, "Member is already active");
+
+    const [member] = await prisma.$transaction([
+      prisma.member.update({
+        where: { id },
+        data: { membershipStatus: "active", membershipStatusUpdatedAt: new Date() },
+      }),
+      prisma.auditLog.create({
+        data: { actorId: req.user!.id, targetId: id, action: "member_reactivated", reason: req.body.reason ?? null },
+      }),
+    ]);
+
+    res.json(toPublicMember(member));
+  })
+);
+
+router.post(
+  "/members/recompute-inactivity",
+  asyncHandler(async (_req, res) => {
+    const result = await recomputeInactivity();
+    res.json(result);
   })
 );
 

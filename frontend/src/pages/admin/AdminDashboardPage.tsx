@@ -1,9 +1,20 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
-import type { AuditLogEntry, Member, PrivilegeDelegation } from "../../types";
+import type { AuditLogEntry, Member, MembershipType, PrivilegeDelegation } from "../../types";
 
-type ActionType = "block" | "unblock" | "delete" | "delegate" | "revoke" | "reset-password";
+type ActionType =
+  | "block"
+  | "unblock"
+  | "delete"
+  | "delegate"
+  | "revoke"
+  | "reset-password"
+  | "set-membership-type"
+  | "resign"
+  | "reactivate";
+
+const MEMBERSHIP_TYPES: MembershipType[] = ["annual", "honorary", "exemplary", "life"];
 
 export default function AdminDashboardPage() {
   const { t } = useTranslation();
@@ -19,6 +30,7 @@ export default function AdminDashboardPage() {
     { type: ActionType; memberId?: string; delegationId?: string; label: string } | null
   >(null);
   const [reason, setReason] = useState("");
+  const [membershipTypeValue, setMembershipTypeValue] = useState<MembershipType>("annual");
   const [error, setError] = useState<string | null>(null);
   const [resetPasswordResult, setResetPasswordResult] = useState<{ memberLabel: string; password: string } | null>(null);
 
@@ -47,8 +59,13 @@ export default function AdminDashboardPage() {
   }, [query, page]);
 
   useEffect(() => {
+    api
+      .post("/admin/members/recompute-inactivity")
+      .catch(() => {})
+      .finally(() => loadMembers());
     loadDelegations();
     loadAuditLog();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function activeDelegationFor(memberId: string) {
@@ -58,6 +75,10 @@ export default function AdminDashboardPage() {
   function openAction(type: ActionType, label: string, memberId?: string, delegationId?: string) {
     setActiveAction({ type, label, memberId, delegationId });
     setReason("");
+    if (type === "set-membership-type") {
+      const target = members.find((m) => m.id === memberId);
+      setMembershipTypeValue(target?.membershipType ?? "annual");
+    }
     setError(null);
   }
 
@@ -72,6 +93,10 @@ export default function AdminDashboardPage() {
       else if (type === "delete") await api.delete(`/admin/members/${memberId}`, { data: { reason } });
       else if (type === "delegate") await api.post(`/admin/members/${memberId}/delegate`, { reason });
       else if (type === "revoke") await api.post(`/admin/delegations/${delegationId}/revoke`, { reason });
+      else if (type === "set-membership-type")
+        await api.post(`/admin/members/${memberId}/membership-type`, { membershipType: membershipTypeValue, reason });
+      else if (type === "resign") await api.post(`/admin/members/${memberId}/resign`, { reason });
+      else if (type === "reactivate") await api.post(`/admin/members/${memberId}/reactivate`, { reason });
       else if (type === "reset-password") {
         const { data } = await api.post(`/admin/members/${memberId}/reset-password`, { reason });
         const target = members.find((m) => m.id === memberId);
@@ -132,6 +157,8 @@ export default function AdminDashboardPage() {
                   <th className="py-2">{t("auth.email")}</th>
                   <th className="py-2">{t("admin.role")}</th>
                   <th className="py-2">{t("admin.status")}</th>
+                  <th className="py-2">{t("admin.membershipType")}</th>
+                  <th className="py-2">{t("admin.membershipStatus")}</th>
                   <th className="py-2">{t("admin.delegation")}</th>
                   <th className="py-2">{t("common.actions")}</th>
                 </tr>
@@ -151,7 +178,21 @@ export default function AdminDashboardPage() {
                         ) : m.status === "blocked" ? (
                           <span className="text-red-600 dark:text-red-400">{t("admin.blocked")}</span>
                         ) : (
-                          <span className="text-emerald-600 dark:text-emerald-400">{t("admin.active")}</span>
+                          <span className="text-blue-600 dark:text-blue-400">{t("admin.active")}</span>
+                        )}
+                      </td>
+                      <td className="py-2">{t(`admin.membershipTypes.${m.membershipType}`)}</td>
+                      <td className="py-2">
+                        {m.membershipType === "annual" ? (
+                          m.membershipStatus === "resigned" ? (
+                            <span className="text-slate-500">{t("admin.membershipStatuses.resigned")}</span>
+                          ) : m.membershipStatus === "inactive" ? (
+                            <span className="text-red-600 dark:text-red-400">{t("admin.membershipStatuses.inactive")}</span>
+                          ) : (
+                            <span className="text-blue-600 dark:text-blue-400">{t("admin.membershipStatuses.active")}</span>
+                          )
+                        ) : (
+                          <span className="text-slate-400">{t("admin.membershipStatuses.active")}</span>
                         )}
                       </td>
                       <td className="py-2">
@@ -161,7 +202,7 @@ export default function AdminDashboardPage() {
                         {isDeleted ? (
                           <button
                             onClick={() => openAction("delete", t("admin.restore"), m.id)}
-                            className="mr-2 text-emerald-700 hover:underline dark:text-emerald-400"
+                            className="mr-2 text-blue-700 hover:underline dark:text-blue-400"
                           >
                             {t("admin.restore")}
                           </button>
@@ -170,7 +211,7 @@ export default function AdminDashboardPage() {
                             {m.status === "blocked" ? (
                               <button
                                 onClick={() => openAction("unblock", t("admin.unblock"), m.id)}
-                                className="text-emerald-700 hover:underline dark:text-emerald-400"
+                                className="text-blue-700 hover:underline dark:text-blue-400"
                               >
                                 {t("admin.unblock")}
                               </button>
@@ -182,6 +223,35 @@ export default function AdminDashboardPage() {
                                 {t("admin.block")}
                               </button>
                             )}
+                            <button
+                              onClick={() => openAction("set-membership-type", t("admin.changeType"), m.id)}
+                              className="text-slate-700 hover:underline dark:text-slate-300"
+                            >
+                              {t("admin.changeType")}
+                            </button>
+                            {m.membershipType === "annual" &&
+                              (m.membershipStatus === "inactive" ? (
+                                <button
+                                  onClick={() => openAction("reactivate", t("admin.reactivate"), m.id)}
+                                  className="text-blue-700 hover:underline dark:text-blue-400"
+                                >
+                                  {t("admin.reactivate")}
+                                </button>
+                              ) : m.membershipStatus === "active" ? (
+                                <button
+                                  onClick={() => openAction("resign", t("admin.resign"), m.id)}
+                                  className="text-amber-700 hover:underline dark:text-amber-400"
+                                >
+                                  {t("admin.resign")}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => openAction("reactivate", t("admin.reactivate"), m.id)}
+                                  className="text-blue-700 hover:underline dark:text-blue-400"
+                                >
+                                  {t("admin.reactivate")}
+                                </button>
+                              ))}
                             {m.role === "member" &&
                               (delegation ? (
                                 <button
@@ -193,7 +263,7 @@ export default function AdminDashboardPage() {
                               ) : (
                                 <button
                                   onClick={() => openAction("delegate", t("admin.delegate"), m.id)}
-                                  className="text-emerald-700 hover:underline dark:text-emerald-400"
+                                  className="text-blue-700 hover:underline dark:text-blue-400"
                                 >
                                   {t("admin.delegate")}
                                 </button>
@@ -248,6 +318,22 @@ export default function AdminDashboardPage() {
             <h3 className="mb-3 text-lg font-semibold">{activeAction.label}</h3>
             {error && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-700">{error}</p>}
             <form onSubmit={handleConfirm} className="space-y-3">
+              {activeAction.type === "set-membership-type" && (
+                <div>
+                  <label className="block text-sm font-medium">{t("admin.membershipType")}</label>
+                  <select
+                    value={membershipTypeValue}
+                    onChange={(e) => setMembershipTypeValue(e.target.value as MembershipType)}
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    {MEMBERSHIP_TYPES.map((mt) => (
+                      <option key={mt} value={mt}>
+                        {t(`admin.membershipTypes.${mt}`)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium">{t("common.reason")}</label>
                 <input
@@ -266,7 +352,7 @@ export default function AdminDashboardPage() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
                 >
                   {t("common.confirm")}
                 </button>

@@ -42,7 +42,7 @@ export default function AccountsPage() {
                   <span
                     className={
                       e.type === "income"
-                        ? "text-emerald-700 dark:text-emerald-400"
+                        ? "text-blue-700 dark:text-blue-400"
                         : "text-red-700 dark:text-red-400"
                     }
                   >

@@ -3,19 +3,25 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../lib/api";
 import { printReceipt } from "../../lib/receipt";
-import type { AccountEntry, AccountEntryCategory } from "../../types";
+import { INCOME_CATEGORIES, PAYMENT_METHODS } from "../../lib/accountCategories";
+import type { AccountEntry, AccountEntryCategory, PaymentMethod } from "../../types";
 
 type PosSelection = AccountEntryCategory | "expense";
 
-const TILES: PosSelection[] = ["membership_fee", "donation", "other_income", "expense"];
+const TILES: PosSelection[] = [...INCOME_CATEGORIES, "expense"];
 
 const RECEIPT_TITLE_KEY: Record<PosSelection, string> = {
   membership_fee: "receipt.feeTitle",
-  donation: "receipt.donationTitle",
-  other_income: "receipt.otherIncomeTitle",
-  bank_interest: "receipt.otherIncomeTitle",
+  aid: "receipt.aidTitle",
+  fine: "receipt.fineTitle",
+  petty_cash: "receipt.voucherTitle",
+  project: "receipt.voucherTitle",
+  bank_payment: "receipt.voucherTitle",
   expense: "receipt.voucherTitle",
 };
+
+/** The POS "expense" tile always records a petty-cash expense (quick point-of-sale use case). */
+const POS_EXPENSE_CATEGORY: AccountEntryCategory = "petty_cash";
 
 function todayDateInput() {
   return new Date().toISOString().slice(0, 10);
@@ -37,6 +43,7 @@ export default function PosEntryModal({
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [entryDate, setEntryDate] = useState(todayDateInput());
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [issueReceipt, setIssueReceipt] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +80,8 @@ export default function PosEntryModal({
     try {
       const { data } = await api.post("/accounts/entries", {
         type: isIncome ? "income" : "expense",
-        category: isIncome ? selection : undefined,
+        category: isIncome ? selection : POS_EXPENSE_CATEGORY,
+        paymentMethod,
         description,
         amount: Number(amount),
         entryDate,
@@ -161,6 +169,21 @@ export default function PosEntryModal({
                 className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">{t("accounts.paymentMethod")}</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+            >
+              {PAYMENT_METHODS.map((pm) => (
+                <option key={pm} value={pm}>
+                  {t(`accounts.paymentMethods.${pm}`)}
+                </option>
+              ))}
+            </select>
           </div>
 
           <label className="flex items-center gap-2 text-sm font-medium">

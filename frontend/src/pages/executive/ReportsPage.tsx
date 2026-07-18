@@ -175,7 +175,7 @@ export default function ReportsPage() {
           </div>
           <button
             type="submit"
-            className="rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
+            className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
           >
             {t("reports.documents.upload")}
           </button>
@@ -203,7 +203,7 @@ export default function ReportsPage() {
                         href={doc.fileUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-emerald-700 hover:underline dark:text-emerald-400"
+                        className="text-blue-700 hover:underline dark:text-blue-400"
                       >
                         {t("reports.documents.download")}
                       </a>

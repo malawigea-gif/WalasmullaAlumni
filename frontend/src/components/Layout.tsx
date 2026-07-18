@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
+import associationCrest from "../assets/association-crest.png";
 
 const memberLinks = [
   { to: "/dashboard", key: "dashboard" },
@@ -34,26 +35,33 @@ export function Layout() {
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `block rounded-md px-3 py-2 text-sm font-medium ${
       isActive
-        ? "bg-emerald-600 text-white"
-        : "text-slate-700 hover:bg-emerald-50 dark:text-slate-200 dark:hover:bg-slate-800"
+        ? "bg-blue-600 text-white"
+        : "text-slate-700 hover:bg-blue-50 dark:text-slate-200 dark:hover:bg-slate-800"
     }`;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 dark:text-slate-100">
-      <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{t("app.name")}</span>
+      <header className="bg-blue-600 shadow-sm dark:bg-blue-800">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+          <div className="flex items-center gap-4">
+            <img
+              src={associationCrest}
+              alt=""
+              className="h-14 w-14 rounded-full border-2 border-white bg-white object-contain"
+            />
+            <span className="text-lg font-bold leading-tight text-white sm:text-xl">{t("app.name")}</span>
+          </div>
           <div className="flex items-center gap-3">
             <button
               onClick={toggleLanguage}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700"
+              className="rounded-md border border-white/60 px-3 py-1.5 text-sm text-white hover:bg-white/10"
             >
               {i18n.language === "si" ? "English" : "සිංහල"}
             </button>
             {user && (
               <button
                 onClick={logout}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+                className="rounded-md bg-white/15 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/25"
               >
                 {t("nav.logout")}
               </button>

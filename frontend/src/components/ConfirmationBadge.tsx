@@ -5,7 +5,7 @@ export function ConfirmationBadge({ confirmedAt }: { confirmedAt: string | null 
 
   if (confirmedAt) {
     return (
-      <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+      <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
         {t("common.confirmed")}
       </span>
     );

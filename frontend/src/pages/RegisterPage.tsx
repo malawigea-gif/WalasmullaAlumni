@@ -51,7 +51,7 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 dark:bg-slate-950">
       <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow dark:bg-slate-900">
-        <h1 className="mb-1 text-lg font-bold text-emerald-700 dark:text-emerald-400">{t("app.name")}</h1>
+        <h1 className="mb-1 text-lg font-bold text-blue-700 dark:text-blue-400">{t("app.name")}</h1>
         <h2 className="mb-4 text-xl font-semibold">{t("auth.register")}</h2>
         {error && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-700">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -81,13 +81,13 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+            className="w-full rounded-md bg-blue-600 px-3 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >
             {t("auth.registerButton")}
           </button>
         </form>
         <div className="mt-4 text-sm">
-          <Link to="/login" className="text-emerald-700 dark:text-emerald-400">
+          <Link to="/login" className="text-blue-700 dark:text-blue-400">
             {t("auth.haveAccount")}
           </Link>
         </div>

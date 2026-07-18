@@ -64,7 +64,9 @@
     "confirmed": "Confirmed",
     "pending": "Pending Confirmation",
     "from": "From",
-    "to": "To"
+    "to": "To",
+    "total": "Total",
+    "noRecords": "No records yet."
   },
   "profile": {
     "title": "My Profile",
@@ -143,6 +145,7 @@
     "startScanning": "Start Scanning",
     "stopScanning": "Stop Scanning",
     "scanSuccess": "Attendance recorded for {{name}}",
+    "scanSuccessWithLabour": "Attendance and {{hours}}h labour contribution recorded for {{name}}",
     "cameraPermission": "Please allow camera access to scan QR codes.",
     "editMeeting": "Edit Meeting",
     "deleteMeeting": "Delete Meeting",
@@ -165,7 +168,9 @@
     "delete": "Delete",
     "deleteConfirm": "Delete this meeting? This cannot be undone.",
     "deleteBlocked": "Cannot delete a meeting with recorded attendance.",
-    "noMeetings": "No meetings yet."
+    "noMeetings": "No meetings yet.",
+    "hasLabourSession": "Include labour contribution session",
+    "labourHours": "Labour hours (per attendee)"
   },
   "messages": {
     "title": "Send Message",
@@ -231,6 +236,8 @@
     "feeTitle": "Fee Payment Receipt",
     "donationTitle": "Donation Receipt",
     "otherIncomeTitle": "Income Receipt",
+    "aidTitle": "Aid Receipt",
+    "fineTitle": "Fine Receipt",
     "voucherTitle": "Expense Voucher",
     "no": "No.",
     "date": "Date",
@@ -264,14 +271,30 @@
     "addBudgetLine": "Add Budget Line",
     "categories": {
       "membership_fee": "Membership Fees",
-      "donation": "Donations",
-      "other_income": "Other Income",
-      "bank_interest": "Bank Interest"
+      "aid": "Aid",
+      "fine": "Fines",
+      "petty_cash": "Petty Cash",
+      "project": "Project",
+      "bank_payment": "Bank Payment"
     },
     "balance": "Current Balance",
     "incomeByCategory": "Income by Category",
     "releaseFunds": "Release Funds",
-    "enterBankInterest": "Enter Bank Interest",
+    "paymentMethod": "Payment Method",
+    "paymentMethods": {
+      "cash": "Cash",
+      "bank": "Bank"
+    },
+    "cashbook": {
+      "receipts": "Receipts",
+      "payments": "Payments",
+      "cashBalance": "Cash Balance",
+      "bankBalance": "Bank Balance",
+      "bankDeposits": "Bank Deposits",
+      "paidFromBank": "Paid From Bank",
+      "pendingApproval": "Pending Approval",
+      "issuedReceipts": "Issued Receipts"
+    },
     "pos": {
       "open": "POS",
       "title": "POS - Quick Entry",
@@ -322,7 +345,31 @@
       "member_restored": "Restored",
       "delegation_granted": "Delegation Granted",
       "delegation_revoked": "Delegation Revoked",
-      "password_reset": "Password Reset"
+      "password_reset": "Password Reset",
+      "membership_type_changed": "Membership Type Changed",
+      "member_resigned": "Member Resigned",
+      "member_reactivated": "Member Reactivated"
+    },
+    "membershipType": "Membership Type",
+    "membershipStatus": "Membership Status",
+    "membershipTypes": {
+      "annual": "Annual (Normal)",
+      "honorary": "Honorary",
+      "exemplary": "Exemplary",
+      "life": "Life"
+    },
+    "membershipStatuses": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "resigned": "Resigned"
+    },
+    "changeType": "Change Type",
+    "resign": "Mark Resigned",
+    "reactivate": "Reactivate",
+    "notes": {
+      "title": "Admin Notes",
+      "placeholder": "Special notes about this member (visible to admins only)",
+      "save": "Save Notes"
     }
   }
 }

@@ -35,7 +35,7 @@ export default function LoginPage() {
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src={associationCrest} alt="" className="h-10 w-10 rounded-full" />
-            <h1 className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{t("app.name")}</h1>
+            <h1 className="text-lg font-bold text-blue-700 dark:text-blue-400">{t("app.name")}</h1>
           </div>
           <button
             onClick={() => i18n.changeLanguage(i18n.language === "si" ? "en" : "si")}
@@ -70,16 +70,16 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+            className="w-full rounded-md bg-blue-600 px-3 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >
             {t("auth.loginButton")}
           </button>
         </form>
         <div className="mt-4 flex justify-between text-sm">
-          <Link to="/forgot-password" className="text-emerald-700 dark:text-emerald-400">
+          <Link to="/forgot-password" className="text-blue-700 dark:text-blue-400">
             {t("auth.forgotPassword")}
           </Link>
-          <Link to="/register" className="text-emerald-700 dark:text-emerald-400">
+          <Link to="/register" className="text-blue-700 dark:text-blue-400">
             {t("auth.noAccount")}
           </Link>
         </div>

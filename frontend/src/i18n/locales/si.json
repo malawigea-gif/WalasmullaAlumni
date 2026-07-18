@@ -64,7 +64,9 @@
     "confirmed": "තහවුරු කර ඇත",
     "pending": "තහවුරු වීමට ඇත",
     "from": "සිට",
-    "to": "දක්වා"
+    "to": "දක්වා",
+    "total": "එකතුව",
+    "noRecords": "තවම සටහන් නොමැත."
   },
   "profile": {
     "title": "මගේ පැතිකඩ",
@@ -143,6 +145,7 @@
     "startScanning": "ස්කෑන් කිරීම ආරම්භ කරන්න",
     "stopScanning": "ස්කෑන් කිරීම නවත්වන්න",
     "scanSuccess": "{{name}} සඳහා පැමිණීම සටහන් විය",
+    "scanSuccessWithLabour": "{{name}} සඳහා පැමිණීම සහ පැය {{hours}}ක ශ්‍රම දායකත්වය සටහන් විය",
     "cameraPermission": "QR කේත ස්කෑන් කිරීමට කැමරා ප්‍රවේශය ලබා දෙන්න.",
     "editMeeting": "රැස්වීම සංශෝධනය කරන්න",
     "deleteMeeting": "රැස්වීම මකන්න",
@@ -165,7 +168,9 @@
     "delete": "මකන්න",
     "deleteConfirm": "මෙම රැස්වීම මකන්නද? මෙය අහෝසි කළ නොහැක.",
     "deleteBlocked": "පැමිණීම් සටහන් ඇති රැස්වීමක් මකා දැමිය නොහැක.",
-    "noMeetings": "තවම රැස්වීම් නොමැත."
+    "noMeetings": "තවම රැස්වීම් නොමැත.",
+    "hasLabourSession": "ශ්‍රම දායකත්ව සැසියක් ඇතුලත් කරන්න",
+    "labourHours": "ශ්‍රම පැය (එක් අයෙකුට)"
   },
   "messages": {
     "title": "පණිවිඩයක් යවන්න",
@@ -231,6 +236,8 @@
     "feeTitle": "සාමාජික ගාස්තු රිසිට් පත",
     "donationTitle": "පරිත්‍යාග රිසිට් පත",
     "otherIncomeTitle": "ආදායම් රිසිට් පත",
+    "aidTitle": "ආධාර රිසිට් පත",
+    "fineTitle": "දඩ මුදල් රිසිට් පත",
     "voucherTitle": "වියදම් කුවිතාන්සිය",
     "no": "අංකය",
     "date": "දිනය",
@@ -264,14 +271,30 @@
     "addBudgetLine": "අයවැය කාණ්ඩයක් එකතු කරන්න",
     "categories": {
       "membership_fee": "සාමාජික ගාස්තු",
-      "donation": "පරිත්‍යාග",
-      "other_income": "වෙනත් ආදායම්",
-      "bank_interest": "බැංකු පොලී"
+      "aid": "ආධාර",
+      "fine": "දඩ මුදල්",
+      "petty_cash": "සුළු මුදල්",
+      "project": "ව්‍යාපෘති",
+      "bank_payment": "බැංකු ගෙවීම්"
     },
     "balance": "වත්මන් ගිණුම් ශේෂය",
     "incomeByCategory": "කාණ්ඩය අනුව ආදායම",
     "releaseFunds": "මුදල් නිකුත් කිරීම",
-    "enterBankInterest": "බැංකු පොලී ඇතුලත් කිරීම",
+    "paymentMethod": "ගෙවීම් ක්‍රමය",
+    "paymentMethods": {
+      "cash": "මුදල්",
+      "bank": "බැංකුව"
+    },
+    "cashbook": {
+      "receipts": "ලැබීම්",
+      "payments": "ගෙවීම්",
+      "cashBalance": "මුදල් ශේෂය",
+      "bankBalance": "බැංකු ශේෂය",
+      "bankDeposits": "බැංකු ගත කිරීම්",
+      "paidFromBank": "බැංකුවෙන් ගෙවීම්",
+      "pendingApproval": "අනුමැතිය ලැබීමට ඇති",
+      "issuedReceipts": "නිකුත් කළ රිසිට්පත්"
+    },
     "pos": {
       "open": "POS කවුළුව",
       "title": "POS - ඉක්මන් ඇතුලත් කිරීම",
@@ -322,7 +345,31 @@
       "member_restored": "යළි ස්ථාපනය කරන ලදී",
       "delegation_granted": "බලය පවරන ලදී",
       "delegation_revoked": "බලය අහෝසි කරන ලදී",
-      "password_reset": "මුරපදය යළි සකසන ලදී"
+      "password_reset": "මුරපදය යළි සකසන ලදී",
+      "membership_type_changed": "සාමාජිකත්ව වර්ගය වෙනස් කරන ලදී",
+      "member_resigned": "සාමාජිකත්වයෙන් ඉල්ලා අස්විය",
+      "member_reactivated": "නැවත සක්‍රීය කරන ලදී"
+    },
+    "membershipType": "සාමාජිකත්ව වර්ගය",
+    "membershipStatus": "සාමාජිකත්ව තත්ත්වය",
+    "membershipTypes": {
+      "annual": "වාර්ෂික (සාමාන්‍ය)",
+      "honorary": "සම්මාන සාමාජිකත්වය",
+      "exemplary": "ආදර්ශමත් සාමාජිකත්වය",
+      "life": "යාවජීව සාමාජිකත්වය"
+    },
+    "membershipStatuses": {
+      "active": "සක්‍රීයයි",
+      "inactive": "අක්‍රීයයි",
+      "resigned": "ඉල්ලා අස්වී ඇත"
+    },
+    "changeType": "වර්ගය වෙනස් කරන්න",
+    "resign": "ඉල්ලා අස්වූ ලෙස සලකුණු කරන්න",
+    "reactivate": "නැවත සක්‍රීය කරන්න",
+    "notes": {
+      "title": "පරිපාලක සටහන්",
+      "placeholder": "මෙම සාමාජිකයා පිළිබඳ විශේෂ සටහන් (පරිපාලකයින්ට පමණක් පෙනේ)",
+      "save": "සටහන් සුරකින්න"
     }
   }
 }

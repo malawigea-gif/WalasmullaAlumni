@@ -9,7 +9,13 @@ export type AuditAction =
   | "member_restored"
   | "delegation_granted"
   | "delegation_revoked"
-  | "password_reset";
+  | "password_reset"
+  | "membership_type_changed"
+  | "member_resigned"
+  | "member_reactivated";
+
+export type MembershipType = "annual" | "honorary" | "exemplary" | "life";
+export type MembershipStatus = "active" | "inactive" | "resigned";
 
 export interface Child {
   id: string;
@@ -52,6 +58,9 @@ export interface Member {
   status: MemberStatus;
   deletedAt: string | null;
   createdAt: string;
+  membershipType: MembershipType;
+  membershipStatus: MembershipStatus;
+  membershipStatusUpdatedAt: string;
   profile?: MemberProfile | null;
   children?: Child[];
   /** Only populated on the /profile/me response. */
@@ -124,6 +133,8 @@ export interface Meeting {
   meetingDate: string;
   location: string | null;
   type: MeetingType;
+  hasLabourSession: boolean;
+  labourHours: string | null;
   _count?: { attendances: number };
 }
 
@@ -184,7 +195,8 @@ export interface ExecutiveHistoryEntry {
 }
 
 export type AccountEntryType = "income" | "expense";
-export type AccountEntryCategory = "membership_fee" | "donation" | "other_income" | "bank_interest";
+export type AccountEntryCategory = "membership_fee" | "aid" | "fine" | "petty_cash" | "project" | "bank_payment";
+export type PaymentMethod = "cash" | "bank";
 
 export interface BudgetLine {
   id: string;
@@ -210,6 +222,7 @@ export interface AccountEntry {
   id: string;
   type: AccountEntryType;
   category?: AccountEntryCategory | null;
+  paymentMethod: PaymentMethod;
   description: string;
   amount: string;
   entryDate: string;

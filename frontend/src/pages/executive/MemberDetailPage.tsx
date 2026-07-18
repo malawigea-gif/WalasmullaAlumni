@@ -22,6 +22,8 @@ export default function MemberDetailPage() {
   const [donationForm, setDonationForm] = useState({ description: "", amount: "" });
   const [labourForm, setLabourForm] = useState({ description: "", hours: "" });
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [adminNotes, setAdminNotes] = useState("");
+  const [adminNotesSaved, setAdminNotesSaved] = useState(false);
 
   async function loadAll() {
     if (!id) return;
@@ -49,6 +51,20 @@ export default function MemberDetailPage() {
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (!id || user?.role !== "admin") return;
+    api.get(`/admin/members/${id}/notes`).then(({ data }) => setAdminNotes(data.adminNotes ?? ""));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user?.role]);
+
+  async function handleSaveAdminNotes(e: FormEvent) {
+    e.preventDefault();
+    if (!id) return;
+    await api.put(`/admin/members/${id}/notes`, { adminNotes: adminNotes || null });
+    setAdminNotesSaved(true);
+    setTimeout(() => setAdminNotesSaved(false), 2000);
+  }
 
   async function handleProfileSave(e: FormEvent) {
     e.preventDefault();
@@ -163,9 +179,30 @@ export default function MemberDetailPage() {
         <p className="text-sm text-slate-500">{member.email}</p>
       </div>
 
+      {user?.role === "admin" && (
+        <section>
+          <h2 className="mb-2 text-lg font-semibold">{t("admin.notes.title")}</h2>
+          <form onSubmit={handleSaveAdminNotes} className="space-y-2">
+            <textarea
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              placeholder={t("admin.notes.placeholder") ?? ""}
+              rows={4}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+            />
+            <div className="flex items-center gap-3">
+              <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                {t("admin.notes.save")}
+              </button>
+              {adminNotesSaved && <span className="text-sm text-blue-700 dark:text-blue-400">{t("common.save")} ✓</span>}
+            </div>
+          </form>
+        </section>
+      )}
+
       <section>
         <h2 className="mb-2 text-lg font-semibold">{t("profile.title")}</h2>
-        {saveMessage && <p className="mb-2 rounded bg-emerald-50 p-2 text-sm text-emerald-800">{saveMessage}</p>}
+        {saveMessage && <p className="mb-2 rounded bg-blue-50 p-2 text-sm text-blue-800">{saveMessage}</p>}
         <form onSubmit={handleProfileSave} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <LabeledInput
             label={t("auth.fullName")}
@@ -188,7 +225,7 @@ export default function MemberDetailPage() {
             onChange={(v) => setProfileForm((f) => ({ ...f, phone: v }))}
           />
           <div className="sm:col-span-2">
-            <button type="submit" className="rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700">
+            <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700">
               {t("common.save")}
             </button>
           </div>
@@ -212,7 +249,7 @@ export default function MemberDetailPage() {
             onChange={(v) => setFeeForm((f) => ({ ...f, year: v }))}
             required
           />
-          <button type="submit" className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+          <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
             {t("fees.recordPayment")}
           </button>
         </form>
@@ -249,7 +286,7 @@ export default function MemberDetailPage() {
             value={donationForm.amount}
             onChange={(v) => setDonationForm((f) => ({ ...f, amount: v }))}
           />
-          <button type="submit" className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+          <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
             {t("donations.recordDonation")}
           </button>
         </form>
@@ -286,7 +323,7 @@ export default function MemberDetailPage() {
             value={labourForm.hours}
             onChange={(v) => setLabourForm((f) => ({ ...f, hours: v }))}
           />
-          <button type="submit" className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+          <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
             {t("labour.recordContribution")}
           </button>
         </form>

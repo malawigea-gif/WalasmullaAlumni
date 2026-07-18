@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow dark:bg-slate-900">
         <h2 className="mb-4 text-xl font-semibold">{t("auth.resetPassword")}</h2>
         {message ? (
-          <p className="rounded bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>
+          <p className="rounded bg-blue-50 p-3 text-sm text-blue-800">{message}</p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
@@ -41,14 +41,14 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-md bg-emerald-600 px-3 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+              className="w-full rounded-md bg-blue-600 px-3 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
             >
               {t("auth.sendResetLink")}
             </button>
           </form>
         )}
         <div className="mt-4 text-sm">
-          <Link to="/login" className="text-emerald-700 dark:text-emerald-400">
+          <Link to="/login" className="text-blue-700 dark:text-blue-400">
             {t("common.back")}
           </Link>
         </div>

@@ -40,7 +40,7 @@ export default function InboxPage() {
             <li key={entry.id} className="py-3">
               <button onClick={() => handleOpen(entry)} className="w-full text-left">
                 <div className="flex items-center justify-between">
-                  <span className={`font-medium ${!entry.readAt ? "text-emerald-700 dark:text-emerald-400" : ""}`}>
+                  <span className={`font-medium ${!entry.readAt ? "text-blue-700 dark:text-blue-400" : ""}`}>
                     {entry.message.subject}
                   </span>
                   <span className="text-xs text-slate-400">{new Date(entry.message.sentAt).toLocaleString()}</span>

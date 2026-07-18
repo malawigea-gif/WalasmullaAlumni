@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { createMeetingSchema, scanAttendanceSchema, updateMeetingSchema } from "../schemas/meeting.schema";
 import { SAFE_MEMBER_SELECT } from "../utils/serialize";
+import { sendBroadcastMessage } from "../services/message.service";
 
 const router = Router();
 
@@ -28,6 +29,22 @@ router.post(
   validateBody(createMeetingSchema),
   asyncHandler(async (req, res) => {
     const meeting = await prisma.meeting.create({ data: req.body });
+
+    try {
+      const labourNote = meeting.hasLabourSession
+        ? ` This session includes a labour contribution activity (${meeting.labourHours} hours).`
+        : "";
+      await sendBroadcastMessage({
+        senderId: req.user!.id,
+        subject: `New meeting: ${meeting.title}`,
+        body: `A new meeting "${meeting.title}" has been scheduled for ${new Date(meeting.meetingDate).toLocaleString()}${
+          meeting.location ? ` at ${meeting.location}` : ""
+        }.${labourNote}`,
+      });
+    } catch (err) {
+      console.error("Failed to send meeting-created broadcast:", err);
+    }
+
     res.status(201).json(meeting);
   })
 );
@@ -78,9 +95,25 @@ router.post(
     });
     if (existing) throw new ApiError(409, "This member has already been marked present for this meeting");
 
-    const attendance = await prisma.meetingAttendance.create({
-      data: { meetingId: meeting.id, memberId: qr.memberId, scannedBy: req.user!.id },
-      include: { member: { select: SAFE_MEMBER_SELECT } },
+    const attendance = await prisma.$transaction(async (tx) => {
+      const created = await tx.meetingAttendance.create({
+        data: { meetingId: meeting.id, memberId: qr.memberId, scannedBy: req.user!.id },
+        include: { member: { select: SAFE_MEMBER_SELECT } },
+      });
+
+      if (meeting.hasLabourSession && meeting.labourHours) {
+        await tx.labourContribution.create({
+          data: {
+            memberId: qr.memberId,
+            description: `Meeting attendance: ${meeting.title}`,
+            date: meeting.meetingDate,
+            hours: meeting.labourHours,
+            recordedBy: req.user!.id,
+          },
+        });
+      }
+
+      return created;
     });
 
     res.status(201).json(attendance);

@@ -112,7 +112,7 @@ export default function ExecutivesPage() {
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={() => openAppoint(position)}
-                    className="rounded-md bg-emerald-600 px-3 py-1 text-sm font-medium text-white hover:bg-emerald-700"
+                    className="rounded-md bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
                   >
                     {t("executives.appoint")}
                   </button>
@@ -159,8 +159,8 @@ export default function ExecutivesPage() {
                               setMemberQuery(m.profile?.fullName ?? m.email);
                               setMemberOptions([]);
                             }}
-                            className={`block w-full px-3 py-2 text-left text-sm hover:bg-emerald-50 dark:hover:bg-slate-800 ${
-                              selectedMemberId === m.id ? "bg-emerald-50 dark:bg-slate-800" : ""
+                            className={`block w-full px-3 py-2 text-left text-sm hover:bg-blue-50 dark:hover:bg-slate-800 ${
+                              selectedMemberId === m.id ? "bg-blue-50 dark:bg-slate-800" : ""
                             }`}
                           >
                             {m.profile?.fullName ?? m.email}
@@ -190,7 +190,7 @@ export default function ExecutivesPage() {
                 <button
                   type="submit"
                   disabled={activeDialog.type === "appoint" && !selectedMemberId}
-                  className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
                 >
                   {t("common.confirm")}
                 </button>
