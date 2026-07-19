@@ -1,6 +1,6 @@
 # Project Status Report — Walasmulla Alumni Association Management System
 
-_Last updated: 2026-07-18 (membership types/status, admin notes, meeting labour sessions with auto-broadcast, redesigned accounts cashbook)_
+_Last updated: 2026-07-19 (membership numbers, admin notes history, PDF member reports, association accounts removed from plain members, treasurer account reset with admin approval, POS member-linked fee/aid/fine)_
 
 This document is a reference for future updates/handoff. It captures what exists, where it's deployed, and what's left to do.
 
@@ -69,9 +69,9 @@ No custom domain is configured — the app runs on the free platform subdomains 
 - Attendance history (list of meetings attended)
 - Personal QR code (view + download as image)
 - Inbox (view received messages, mark as read)
-- Association Accounts (`/accounts`, read-only): approved income/expense
-  ledger entries, but only through the end of last calendar month — the
-  current month's entries stay hidden from members even if already approved
+- Fines (`/fines`, read-only): as of 2026-07-19, a new per-member `Fine`
+  record type (mirrors `FeePayment`/`Donation`) with its own confirmation
+  workflow; members can view but not create their own fines.
 - Change own password (`/profile`, `POST /profile/me/password`): requires the
   current password (bcrypt-verified) before hashing and storing the new one.
   Available to every member, executive, and admin — not just admin-initiated
@@ -185,6 +185,28 @@ No custom domain is configured — the app runs on the free platform subdomains 
   also shows a running list of the current treasurer's entries recorded that
   day, and prints an 80mm thermal receipt immediately via `printReceipt()`
   after a successful save (when the checkbox is checked).
+- As of 2026-07-19, when the POS tile is Membership Fee / Aid / Fine, a
+  "Select Member" box (membership-number search or QR scan, reusing the same
+  `Html5Qrcode` pattern as the Member Directory's scanner) is required before
+  saving. Selecting a member causes `POST /accounts/entries` to create the
+  ledger `AccountEntry` **and** the matching per-member record
+  (`FeePayment`/`Donation`/`Fine`) in one transaction — the same
+  dual-insert pattern already used for meeting labour-session QR scans. The
+  manual (no-member) entry form is unaffected.
+- Account Reset (2026-07-19, `AccountsManagementPage`, treasurer + admin):
+  a maker-checker workflow for closing the books and starting a new
+  accounting period. Treasurer requests a reset with a reason
+  (`POST /accounts/reset-requests`); an admin must separately approve
+  (`POST /accounts/reset-requests/:id/approve`) or reject it — only one
+  reset request can be in flight at a time (409 otherwise). Once approved,
+  the treasurer opens a dedicated "Enter Opening Balances" window
+  (`AccountResetModal.tsx`) to set the new cash/bank starting balances
+  (`POST /accounts/reset-requests/:id/apply`). All prior `AccountEntry` rows
+  remain in the database (nothing is deleted), but the balance tiles and
+  cashbook tables only sum entries dated on/after the latest applied reset's
+  `appliedAt`, seeded from its opening balances — this filtering happens
+  client-side (`GET /accounts/entries` still returns full history; a new
+  `GET /accounts/reset-status` tells the frontend where the cutoff is).
 - Thermal-printer receipts (`frontend/src/lib/receipt.ts`, `printReceipt()`):
   opens a browser print dialog styled for 80mm thermal paper
   (`@page { size: 80mm auto }`). Wired into `MemberDetailPage` (Print Receipt
@@ -234,10 +256,26 @@ No custom domain is configured — the app runs on the free platform subdomains 
   since their last status change (run on Admin Dashboard load via
   `POST /admin/members/recompute-inactivity`, and available to call from a
   scheduler if one is added later).
-- Admin Notes: free-text notes on a member's profile, visible only to admins
-  (`Member.adminNotes`, `GET`/`PUT /admin/members/:id/notes`), editable from
-  that member's detail page (`/members/:id`). Deliberately stripped out of
-  `toPublicMember()` so it never leaks into any non-admin API response.
+- Admin Notes: as of 2026-07-19, a timestamped history rather than a single
+  overwritable field — each save adds a new `AdminNote` row (member, author,
+  note, createdAt) instead of replacing the old text. Visible only to admins,
+  via a dedicated "Admin Notes" tab on that member's detail page
+  (`/members/:id`, `GET`/`POST /admin/members/:id/notes`). The old single
+  `Member.adminNotes` column was dropped; any existing free-text note was
+  migrated forward as the first history entry.
+- Membership Number: as of 2026-07-19, every member can be given a
+  human-readable membership number (`Member.membershipNo`, free text,
+  unique), assignable by an admin **or** the member currently holding the
+  secretary position (`PUT /members/:id/membership-no`, new
+  `requireAdminOrSecretary` middleware in `backend/src/middleware/auth.ts`).
+  Shown on the member's own profile, the Member Directory table, and that
+  member's detail page.
+- Full Member Report PDF (2026-07-19, admin-only): a "Download Full Report
+  (PDF)" button on a member's detail page generates and streams a single PDF
+  (`GET /admin/members/:id/report.pdf`, `backend/src/lib/pdf/memberReport.ts`,
+  using `pdfkit` — the app's first PDF-generation dependency) covering full
+  profile details, fee payments, donations, labour contributions, and admin
+  notes (if any) in one document.
 
 ## 5. Architecture Summary
 
@@ -258,17 +296,29 @@ React SPA (Vercel)  →  Express API (Render)  →  PostgreSQL (Supabase)
   position), plus `membershipType` (annual/honorary/exemplary/life,
   default annual), `membershipStatus` (active/inactive/resigned, default
   active, meaningful only for annual members) with
-  `membershipStatusUpdatedAt`, and `adminNotes` (admin-only free text,
-  stripped from `toPublicMember()`)
+  `membershipStatusUpdatedAt`, and `membershipNo` (2026-07-19, optional
+  unique free-text membership number, admin/secretary-assignable). The old
+  `adminNotes` free-text column was dropped in favor of the `AdminNote`
+  table below.
 - `MemberProfile` — one-to-one extended profile fields
 - `Child` — one-to-many, a member's children
 - `ExecutivePosition` — the 5 fixed positions and their current holder
 - `ExecutiveHistory` — append-only audit log of appoint/remove actions
-- `FeePayment`, `Donation`, `LabourContribution` — per-member financial/contribution
-  records; each has `recordedBy` (who logged it) plus `confirmedBy`/`confirmedAt`
-  (who verified it, and when — null until an executive/admin/delegated member confirms).
+- `FeePayment`, `Donation`, `LabourContribution`, `Fine` (2026-07-19) —
+  per-member financial/contribution records; each has `recordedBy` (who
+  logged it) plus `confirmedBy`/`confirmedAt` (who verified it, and when —
+  null until an executive/admin/delegated member confirms).
   `LabourContribution` rows are also created automatically by a meeting's
-  labour-session QR scan (see Meetings below)
+  labour-session QR scan (see Meetings below); `FeePayment`/`Donation`/`Fine`
+  rows can also be created automatically by a POS entry linked to a member
+  (see Accounts below)
+- `AdminNote` (2026-07-19) — timestamped admin-only note history per member
+  (memberId, authorId, note, createdAt), replacing the old single
+  `Member.adminNotes` field
+- `AccountReset` (2026-07-19) — maker-checker record for a treasurer-initiated,
+  admin-approved account reset (requestedBy/reason/status, approvedBy,
+  openingCashBalance/openingBankBalance, appliedAt); status is one of
+  pending/approved/rejected/applied
 - `Meeting`, `MeetingAttendance` — meetings and who attended (via QR scan);
   `MeetingAttendance` also carries `confirmedBy`/`confirmedAt` for the same
   confirmation workflow. `Meeting` additionally carries `hasLabourSession`
@@ -282,7 +332,10 @@ React SPA (Vercel)  →  Express API (Render)  →  PostgreSQL (Supabase)
   both income and expense: `membership_fee`/`aid`/`fine` for income,
   `petty_cash`/`project`/`bank_payment` for expense) and `paymentMethod`
   (`cash`/`bank`, default cash), optional `budgetLineId`, `receiptIssued`
-  (bool, only meaningful for income — set via the POS window);
+  (bool, only meaningful for income — set via the POS window), and (2026-07-19)
+  optional `memberId` — set when a POS income entry was linked to a specific
+  member, in which case a matching `FeePayment`/`Donation`/`Fine` row was
+  also created in the same transaction;
   `AccountEntryApproval` — one row per distinct approver (unique on
   entry+approver), 2 rows = fully approved (skipped entirely when
   `budgetLineId` is set, or when the entry is income with `receiptIssued`)
@@ -359,6 +412,34 @@ blocked by `requireExecutive` before and remain blocked after — no behavior
 change for them. If a future `requireExecutive` usage is added, double-check
 whether admin should be included — `requireExecutiveOrAdmin` is very likely
 the correct choice for anything executive-committee-level.
+
+## 6c. Six New Admin/Treasurer Features (2026-07-19)
+
+Implemented and verified end-to-end (live API calls plus a Playwright
+browser pass against the running dev servers, all seeded accounts):
+membership numbers (admin/secretary-assignable), a timestamped Admin Notes
+history (replacing the old single overwritable field), a one-click full
+member PDF report, removal of the Association Accounts view from plain
+members (both nav/route and the `GET /accounts/entries` API, which now
+requires `requireExecutiveOrAdmin`), a treasurer-initiated /
+admin-approved account reset with a dedicated opening-balance window, and
+POS entries that can be linked to a specific member (creating a matching
+`FeePayment`/`Donation`/`Fine` row alongside the ledger entry). See the
+relevant bullets above (§4) and the new `AdminNote`/`AccountReset`/`Fine`
+entities (§5) for details.
+
+Two notable decisions made along the way:
+- The account-reset balance cutoff is computed **client-side** — the
+  `GET /accounts/entries` API still returns full history unfiltered, and
+  `AccountsManagementPage` filters to entries on/after the latest applied
+  reset's `appliedAt` before computing balances/cashbook tables. Nothing is
+  ever deleted; a reset only changes what counts toward the *displayed*
+  current-period balance.
+- POS member-linking reuses the exact dual-insert transaction pattern
+  already established for meeting labour-session QR scans
+  (`backend/src/routes/meetings.routes.ts`) rather than introducing a new
+  pattern — one `prisma.$transaction` creates both the ledger row and the
+  per-member record.
 
 ## 7. Known Limitations
 
