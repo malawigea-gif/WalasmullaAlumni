@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
-import associationCrest from "../assets/association-crest.png";
+import associationCrest from "../assets/association-crest.jpg";
 
 const memberLinks = [
   { to: "/dashboard", key: "dashboard" },

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const INCOME_CATEGORIES = ["membership_fee", "aid", "fine"] as const;
+export const INCOME_CATEGORIES = ["membership_fee", "aid", "fine", "bank_interest", "other"] as const;
 export const EXPENSE_CATEGORIES = ["petty_cash", "project", "bank_payment"] as const;
 
 export const createAccountEntrySchema = z
@@ -40,4 +40,9 @@ export const rejectAccountResetSchema = z.object({
 export const applyAccountResetSchema = z.object({
   openingCashBalance: z.coerce.number().min(0),
   openingBankBalance: z.coerce.number().min(0),
+});
+
+export const budgetReportQuerySchema = z.object({
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
 });

@@ -5,8 +5,10 @@ import { validateBody } from "../middleware/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { SAFE_MEMBER_SELECT } from "../utils/serialize";
+import { buildBudgetReportPdf } from "../lib/pdf/budgetReport";
 import {
   applyAccountResetSchema,
+  budgetReportQuerySchema,
   createAccountEntrySchema,
   createAccountResetRequestSchema,
   createBudgetLineSchema,
@@ -317,6 +319,53 @@ router.post(
       }),
     ]);
     res.json(updated);
+  })
+);
+
+router.get(
+  "/budget-report.pdf",
+  requireExecutiveOrAdmin,
+  asyncHandler(async (req, res) => {
+    const parsed = budgetReportQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      throw new ApiError(400, parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "));
+    }
+    const { from, to } = parsed.data;
+
+    const appliedReset = await prisma.accountReset.findFirst({
+      where: { status: "applied" },
+      orderBy: { appliedAt: "desc" },
+    });
+    const resetCutoff = appliedReset?.appliedAt ?? undefined;
+    const openingCashBalance = appliedReset ? Number(appliedReset.openingCashBalance ?? 0) : 0;
+    const openingBankBalance = appliedReset ? Number(appliedReset.openingBankBalance ?? 0) : 0;
+
+    const entries = await prisma.accountEntry.findMany({
+      where: {
+        entryDate: { gte: resetCutoff, lte: to },
+      },
+      include: { approvals: true },
+      orderBy: { entryDate: "asc" },
+    });
+
+    const approvedEntries = entries.filter((e) => computeIsFullyApproved(e));
+
+    const fromStr = from ? from.toISOString().slice(0, 10) : undefined;
+    const toStr = to ? to.toISOString().slice(0, 10) : undefined;
+
+    const doc = buildBudgetReportPdf({
+      entries: approvedEntries,
+      openingCashBalance,
+      openingBankBalance,
+      from: fromStr,
+      to: toStr,
+    });
+
+    const rawName = `budget-report${fromStr ? `-${fromStr}` : ""}${toStr ? `-to-${toStr}` : ""}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${rawName}"`);
+    doc.pipe(res);
+    doc.end();
   })
 );
 

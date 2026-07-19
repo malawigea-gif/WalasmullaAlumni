@@ -51,12 +51,17 @@ export default function AccountsManagementPage() {
     openingBank +
     approvedEntries.reduce((sum, e) => sum + (e.type === "income" ? Number(e.amount) : -Number(e.amount)), 0);
 
-  const incomeByCategory = INCOME_CATEGORIES.map((c) => ({
-    category: c,
-    total: approvedEntries
-      .filter((e) => e.type === "income" && e.category === c)
-      .reduce((sum, e) => sum + Number(e.amount), 0),
-  }));
+  const bankBalance =
+    openingBank +
+    approvedEntries
+      .filter((e) => e.paymentMethod === "bank")
+      .reduce((sum, e) => sum + (e.type === "income" ? Number(e.amount) : -Number(e.amount)), 0);
+
+  const cashBalance =
+    openingCash +
+    approvedEntries
+      .filter((e) => e.paymentMethod === "cash")
+      .reduce((sum, e) => sum + (e.type === "income" ? Number(e.amount) : -Number(e.amount)), 0);
 
   // Running cash/bank balances, computed cumulatively over every approved entry (income and
   // expense) in ascending date order (seeded from the latest applied reset's opening balances,
@@ -77,17 +82,46 @@ export default function AccountsManagementPage() {
     }
   }
 
-  const incomeDatesSorted = Array.from(
-    new Set(approvedEntries.filter((e) => e.type === "income").map(dateKey))
-  ).sort();
+  const [receiptCategoryInput, setReceiptCategoryInput] = useState<"all" | AccountEntryCategory>("all");
+  const [receiptFromInput, setReceiptFromInput] = useState("");
+  const [receiptToInput, setReceiptToInput] = useState("");
+  const [receiptFilter, setReceiptFilter] = useState<{ category: "all" | AccountEntryCategory; from: string; to: string }>({
+    category: "all",
+    from: "",
+    to: "",
+  });
+
+  const [paymentCategoryInput, setPaymentCategoryInput] = useState<"all" | AccountEntryCategory>("all");
+  const [paymentFromInput, setPaymentFromInput] = useState("");
+  const [paymentToInput, setPaymentToInput] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState<{ category: "all" | AccountEntryCategory; from: string; to: string }>({
+    category: "all",
+    from: "",
+    to: "",
+  });
+
+  const [budgetPdfFrom, setBudgetPdfFrom] = useState("");
+  const [budgetPdfTo, setBudgetPdfTo] = useState("");
+  const [budgetPdfLoading, setBudgetPdfLoading] = useState(false);
+
+  const receiptFilteredEntries = approvedEntries.filter((e) => {
+    if (e.type !== "income") return false;
+    if (receiptFilter.category !== "all" && e.category !== receiptFilter.category) return false;
+    if (receiptFilter.from && dateKey(e) < receiptFilter.from) return false;
+    if (receiptFilter.to && dateKey(e) > receiptFilter.to) return false;
+    return true;
+  });
+
+  const incomeDatesSorted = Array.from(new Set(receiptFilteredEntries.map(dateKey))).sort();
 
   const receiptRows = incomeDatesSorted.map((d) => {
-    const dayIncome = approvedEntries.filter((e) => e.type === "income" && dateKey(e) === d);
+    const dayIncome = receiptFilteredEntries.filter((e) => dateKey(e) === d);
     const sumBy = (cat: AccountEntryCategory) =>
       dayIncome.filter((e) => e.category === cat).reduce((s, e) => s + Number(e.amount), 0);
     const membership = sumBy("membership_fee");
     const aid = sumBy("aid");
     const fine = sumBy("fine");
+    const total = dayIncome.reduce((s, e) => s + Number(e.amount), 0);
     const bankDeposits = dayIncome
       .filter((e) => e.paymentMethod === "bank")
       .reduce((s, e) => s + Number(e.amount), 0);
@@ -97,7 +131,7 @@ export default function AccountsManagementPage() {
       membership,
       aid,
       fine,
-      total: membership + aid + fine,
+      total,
       bankDeposits,
       cashBalance: balance.cash,
       bankBalance: balance.bank,
@@ -105,7 +139,13 @@ export default function AccountsManagementPage() {
   });
 
   const paymentRows = approvedEntries
-    .filter((e) => e.type === "expense")
+    .filter((e) => {
+      if (e.type !== "expense") return false;
+      if (paymentFilter.category !== "all" && e.category !== paymentFilter.category) return false;
+      if (paymentFilter.from && dateKey(e) < paymentFilter.from) return false;
+      if (paymentFilter.to && dateKey(e) > paymentFilter.to) return false;
+      return true;
+    })
     .sort((a, b) => a.entryDate.localeCompare(b.entryDate))
     .map((e) => ({
       entry: e,
@@ -228,6 +268,29 @@ export default function AccountsManagementPage() {
     }
   }
 
+  async function handleDownloadBudgetPdf() {
+    setError(null);
+    setBudgetPdfLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (budgetPdfFrom) params.set("from", budgetPdfFrom);
+      if (budgetPdfTo) params.set("to", budgetPdfTo);
+      const response = await api.get(`/accounts/budget-report.pdf?${params.toString()}`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `budget-report${budgetPdfFrom ? `-${budgetPdfFrom}` : ""}${budgetPdfTo ? `-to-${budgetPdfTo}` : ""}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.response?.data?.error ?? "Failed to generate budget report");
+    } finally {
+      setBudgetPdfLoading(false);
+    }
+  }
+
   function handlePrintVoucher(entry: AccountEntry) {
     printReceipt({
       associationName: t("app.name"),
@@ -277,17 +340,19 @@ export default function AccountsManagementPage() {
       <div>
         <h1 className="mb-4 text-2xl font-bold">{t("accounts.manageTitle")}</h1>
 
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+            <div className="text-xs font-medium text-slate-500">{t("accounts.cashbook.bankBalance")}</div>
+            <div className="mt-1 text-2xl font-semibold">Rs. {bankBalance.toFixed(2)}</div>
+          </div>
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+            <div className="text-xs font-medium text-slate-500">{t("accounts.cashbook.cashBalance")}</div>
+            <div className="mt-1 text-2xl font-semibold">Rs. {cashBalance.toFixed(2)}</div>
+          </div>
           <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
             <div className="text-xs font-medium text-slate-500">{t("accounts.balance")}</div>
             <div className="mt-1 text-2xl font-semibold">Rs. {balance.toFixed(2)}</div>
           </div>
-          {incomeByCategory.map((c) => (
-            <div key={c.category} className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-              <div className="text-xs font-medium text-slate-500">{t(`accounts.categories.${c.category}`)}</div>
-              <div className="mt-1 text-2xl font-semibold">Rs. {c.total.toFixed(2)}</div>
-            </div>
-          ))}
         </div>
 
         {error && <p className="mb-3 rounded bg-red-50 p-2 text-sm text-red-700">{error}</p>}
@@ -488,6 +553,48 @@ export default function AccountsManagementPage() {
           <div className="space-y-8">
             <div>
               <h2 className="mb-2 text-lg font-semibold">{t("accounts.cashbook.receipts")}</h2>
+              <div className="mb-3 flex flex-wrap items-end gap-2">
+                <div>
+                  <label className="block text-sm font-medium">{t("accounts.category")}</label>
+                  <select
+                    value={receiptCategoryInput}
+                    onChange={(e) => setReceiptCategoryInput(e.target.value as "all" | AccountEntryCategory)}
+                    className="mt-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    <option value="all">{t("accounts.allCategories")}</option>
+                    {INCOME_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {t(`accounts.categories.${c}`)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">{t("common.from")}</label>
+                  <input
+                    type="date"
+                    value={receiptFromInput}
+                    onChange={(e) => setReceiptFromInput(e.target.value)}
+                    className="mt-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">{t("common.to")}</label>
+                  <input
+                    type="date"
+                    value={receiptToInput}
+                    onChange={(e) => setReceiptToInput(e.target.value)}
+                    className="mt-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReceiptFilter({ category: receiptCategoryInput, from: receiptFromInput, to: receiptToInput })}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  {t("common.search")}
+                </button>
+              </div>
               {receiptRows.length === 0 ? (
                 <p className="text-sm text-slate-500">{t("common.noRecords")}</p>
               ) : (
@@ -526,6 +633,48 @@ export default function AccountsManagementPage() {
 
             <div>
               <h2 className="mb-2 text-lg font-semibold">{t("accounts.cashbook.payments")}</h2>
+              <div className="mb-3 flex flex-wrap items-end gap-2">
+                <div>
+                  <label className="block text-sm font-medium">{t("accounts.category")}</label>
+                  <select
+                    value={paymentCategoryInput}
+                    onChange={(e) => setPaymentCategoryInput(e.target.value as "all" | AccountEntryCategory)}
+                    className="mt-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    <option value="all">{t("accounts.allCategories")}</option>
+                    {EXPENSE_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {t(`accounts.categories.${c}`)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">{t("common.from")}</label>
+                  <input
+                    type="date"
+                    value={paymentFromInput}
+                    onChange={(e) => setPaymentFromInput(e.target.value)}
+                    className="mt-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">{t("common.to")}</label>
+                  <input
+                    type="date"
+                    value={paymentToInput}
+                    onChange={(e) => setPaymentToInput(e.target.value)}
+                    className="mt-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPaymentFilter({ category: paymentCategoryInput, from: paymentFromInput, to: paymentToInput })}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  {t("common.search")}
+                </button>
+              </div>
               {paymentRows.length === 0 ? (
                 <p className="text-sm text-slate-500">{t("common.noRecords")}</p>
               ) : (
@@ -667,6 +816,35 @@ export default function AccountsManagementPage() {
 
       <div>
         <h2 className="mb-2 text-lg font-semibold">{t("accounts.budgetTitle")}</h2>
+
+        <div className="mb-4 flex flex-wrap items-end gap-2">
+          <div>
+            <label className="block text-sm font-medium">{t("common.from")}</label>
+            <input
+              type="date"
+              value={budgetPdfFrom}
+              onChange={(e) => setBudgetPdfFrom(e.target.value)}
+              className="mt-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">{t("common.to")}</label>
+            <input
+              type="date"
+              value={budgetPdfTo}
+              onChange={(e) => setBudgetPdfTo(e.target.value)}
+              className="mt-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleDownloadBudgetPdf}
+            disabled={budgetPdfLoading}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          >
+            {t("common.search")}
+          </button>
+        </div>
 
         {isTreasurer && (
           <form onSubmit={handleAddBudgetLine} className="mb-4 flex flex-wrap items-end gap-2">

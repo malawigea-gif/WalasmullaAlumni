@@ -71,6 +71,8 @@ enum AccountEntryCategory {
   membership_fee
   aid
   fine
+  bank_interest
+  other
   petty_cash
   project
   bank_payment

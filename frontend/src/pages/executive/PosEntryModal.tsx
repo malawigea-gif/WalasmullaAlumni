@@ -4,7 +4,7 @@ import { Html5Qrcode } from "html5-qrcode";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../lib/api";
 import { printReceipt } from "../../lib/receipt";
-import { INCOME_CATEGORIES, PAYMENT_METHODS } from "../../lib/accountCategories";
+import { INCOME_CATEGORIES, MEMBER_LINKED_INCOME_CATEGORIES, PAYMENT_METHODS } from "../../lib/accountCategories";
 import type { AccountEntry, AccountEntryCategory, PaymentMethod } from "../../types";
 
 type PosSelection = AccountEntryCategory | "expense";
@@ -15,6 +15,8 @@ const RECEIPT_TITLE_KEY: Record<PosSelection, string> = {
   membership_fee: "receipt.feeTitle",
   aid: "receipt.aidTitle",
   fine: "receipt.fineTitle",
+  bank_interest: "receipt.bankInterestTitle",
+  other: "receipt.otherIncomeTitle",
   petty_cash: "receipt.voucherTitle",
   project: "receipt.voucherTitle",
   bank_payment: "receipt.voucherTitle",
@@ -57,6 +59,7 @@ export default function PosEntryModal({
   const busyRef = useRef(false);
 
   const isIncome = selection !== "expense";
+  const requiresMember = isIncome && MEMBER_LINKED_INCOME_CATEGORIES.includes(selection as AccountEntryCategory);
 
   useEffect(() => {
     return () => {
@@ -145,7 +148,7 @@ export default function PosEntryModal({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    if (isIncome && !selectedMember) {
+    if (requiresMember && !selectedMember) {
       setError(t("accounts.pos.memberRequired"));
       return;
     }
@@ -211,7 +214,7 @@ export default function PosEntryModal({
           ))}
         </div>
 
-        {isIncome && (
+        {requiresMember && (
           <div className="mb-4 rounded-md border border-slate-200 p-3 dark:border-slate-800">
             <h3 className="mb-2 text-sm font-semibold text-slate-500">{t("accounts.pos.selectMember")}</h3>
             {selectedMember ? (

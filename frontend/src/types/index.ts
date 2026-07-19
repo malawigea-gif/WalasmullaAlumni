@@ -240,7 +240,15 @@ export interface ExecutiveHistoryEntry {
 }
 
 export type AccountEntryType = "income" | "expense";
-export type AccountEntryCategory = "membership_fee" | "aid" | "fine" | "petty_cash" | "project" | "bank_payment";
+export type AccountEntryCategory =
+  | "membership_fee"
+  | "aid"
+  | "fine"
+  | "bank_interest"
+  | "other"
+  | "petty_cash"
+  | "project"
+  | "bank_payment";
 export type PaymentMethod = "cash" | "bank";
 
 export interface BudgetLine {
