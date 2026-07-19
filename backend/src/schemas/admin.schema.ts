@@ -5,7 +5,7 @@ export const adminActionSchema = z.object({
 });
 
 export const adminNotesSchema = z.object({
-  adminNotes: z.string().max(5000).optional().nullable(),
+  note: z.string().min(1).max(5000),
 });
 
 export const setMembershipTypeSchema = z.object({

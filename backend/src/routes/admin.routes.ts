@@ -10,6 +10,7 @@ import { ApiError } from "../utils/ApiError";
 import { toPublicMember, SAFE_MEMBER_SELECT } from "../utils/serialize";
 import { adminActionSchema, adminNotesSchema, setMembershipTypeSchema } from "../schemas/admin.schema";
 import { recomputeInactivity } from "../services/inactivity.service";
+import { buildMemberReportPdf } from "../lib/pdf/memberReport";
 
 const router = Router();
 
@@ -238,28 +239,27 @@ router.post(
 router.get(
   "/members/:id/notes",
   asyncHandler(async (req, res) => {
-    const member = await prisma.member.findUnique({
-      where: { id: req.params.id },
-      select: { id: true, adminNotes: true },
+    const notes = await prisma.adminNote.findMany({
+      where: { memberId: req.params.id },
+      include: { author: { select: SAFE_MEMBER_SELECT } },
+      orderBy: { createdAt: "desc" },
     });
-    if (!member) throw new ApiError(404, "Member not found");
-    res.json({ adminNotes: member.adminNotes });
+    res.json(notes);
   })
 );
 
-router.put(
+router.post(
   "/members/:id/notes",
   validateBody(adminNotesSchema),
   asyncHandler(async (req, res) => {
     const target = await prisma.member.findUnique({ where: { id: req.params.id } });
     if (!target) throw new ApiError(404, "Member not found");
 
-    const updated = await prisma.member.update({
-      where: { id: req.params.id },
-      data: { adminNotes: req.body.adminNotes ?? null },
-      select: { id: true, adminNotes: true },
+    const note = await prisma.adminNote.create({
+      data: { memberId: req.params.id, authorId: req.user!.id, note: req.body.note },
+      include: { author: { select: SAFE_MEMBER_SELECT } },
     });
-    res.json(updated);
+    res.status(201).json(note);
   })
 );
 
@@ -351,6 +351,38 @@ router.post(
   asyncHandler(async (_req, res) => {
     const result = await recomputeInactivity();
     res.json(result);
+  })
+);
+
+router.get(
+  "/members/:id/report.pdf",
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const member = await prisma.member.findUnique({ where: { id }, include: { profile: true } });
+    if (!member) throw new ApiError(404, "Member not found");
+
+    const [feePayments, donations, labourContributions, adminNotes] = await Promise.all([
+      prisma.feePayment.findMany({ where: { memberId: id }, orderBy: { paidDate: "desc" } }),
+      prisma.donation.findMany({ where: { memberId: id }, orderBy: { donatedDate: "desc" } }),
+      prisma.labourContribution.findMany({ where: { memberId: id }, orderBy: { date: "desc" } }),
+      prisma.adminNote.findMany({
+        where: { memberId: id },
+        include: { author: { select: SAFE_MEMBER_SELECT } },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    const doc = buildMemberReportPdf({ member, feePayments, donations, labourContributions, adminNotes });
+
+    const rawName = `${member.profile?.fullName || member.email}-report.pdf`;
+    const asciiFallback = rawName.replace(/[^a-zA-Z0-9.\- ]/g, "_");
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(rawName)}`
+    );
+    doc.pipe(res);
+    doc.end();
   })
 );
 

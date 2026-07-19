@@ -4,8 +4,9 @@ import { useAuth } from "../../context/AuthContext";
 import { api } from "../../lib/api";
 import { printReceipt } from "../../lib/receipt";
 import PosEntryModal from "./PosEntryModal";
+import AccountResetModal from "./AccountResetModal";
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, PAYMENT_METHODS } from "../../lib/accountCategories";
-import type { AccountEntry, AccountEntryCategory, AccountEntryType, BudgetLine, PaymentMethod } from "../../types";
+import type { AccountEntry, AccountEntryCategory, AccountEntryType, AccountReset, BudgetLine, PaymentMethod } from "../../types";
 
 function dateKey(e: AccountEntry) {
   return e.entryDate.slice(0, 10);
@@ -28,13 +29,27 @@ export default function AccountsManagementPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPos, setShowPos] = useState(false);
 
-  const approvedEntries = entries.filter((e) => e.isFullyApproved);
+  const [appliedReset, setAppliedReset] = useState<AccountReset | null>(null);
+  const [pendingReset, setPendingReset] = useState<AccountReset | null>(null);
+  const [showResetRequestForm, setShowResetRequestForm] = useState(false);
+  const [resetReason, setResetReason] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
+  const [showResetBalanceModal, setShowResetBalanceModal] = useState(false);
+
+  const approvedEntriesAll = entries.filter((e) => e.isFullyApproved);
+  const resetCutoff = appliedReset?.appliedAt ? new Date(appliedReset.appliedAt) : null;
+  const approvedEntries = resetCutoff
+    ? approvedEntriesAll.filter((e) => new Date(e.entryDate) >= resetCutoff)
+    : approvedEntriesAll;
   const pendingEntries = entries.filter((e) => !e.isFullyApproved);
 
-  const balance = approvedEntries.reduce(
-    (sum, e) => sum + (e.type === "income" ? Number(e.amount) : -Number(e.amount)),
-    0
-  );
+  const openingCash = appliedReset ? Number(appliedReset.openingCashBalance ?? 0) : 0;
+  const openingBank = appliedReset ? Number(appliedReset.openingBankBalance ?? 0) : 0;
+
+  const balance =
+    openingCash +
+    openingBank +
+    approvedEntries.reduce((sum, e) => sum + (e.type === "income" ? Number(e.amount) : -Number(e.amount)), 0);
 
   const incomeByCategory = INCOME_CATEGORIES.map((c) => ({
     category: c,
@@ -44,13 +59,13 @@ export default function AccountsManagementPage() {
   }));
 
   // Running cash/bank balances, computed cumulatively over every approved entry (income and
-  // expense) in ascending date order, keyed by date so the Receipts table can show a
-  // balance-as-of-that-date column.
+  // expense) in ascending date order (seeded from the latest applied reset's opening balances,
+  // if any), keyed by date so the Receipts table can show a balance-as-of-that-date column.
   const balanceByDate = new Map<string, { cash: number; bank: number }>();
   {
     const allDatesSorted = Array.from(new Set(approvedEntries.map(dateKey))).sort();
-    let runningCash = 0;
-    let runningBank = 0;
+    let runningCash = openingCash;
+    let runningBank = openingBank;
     for (const d of allDatesSorted) {
       for (const e of approvedEntries.filter((entry) => dateKey(entry) === d)) {
         const amt = Number(e.amount);
@@ -112,10 +127,53 @@ export default function AccountsManagementPage() {
   const [budgetYear, setBudgetYear] = useState(new Date().getFullYear().toString());
 
   async function load() {
-    const [entriesRes, budgetRes] = await Promise.all([api.get("/accounts/entries"), api.get("/accounts/budget-lines")]);
+    const [entriesRes, budgetRes, resetStatusRes] = await Promise.all([
+      api.get("/accounts/entries"),
+      api.get("/accounts/budget-lines"),
+      api.get("/accounts/reset-status"),
+    ]);
     setEntries(entriesRes.data);
     setBudgetLines(budgetRes.data);
+    setAppliedReset(resetStatusRes.data.appliedReset);
+    setPendingReset(resetStatusRes.data.pendingRequest);
     setLoading(false);
+  }
+
+  async function handleRequestReset(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    try {
+      await api.post("/accounts/reset-requests", { reason: resetReason });
+      setResetReason("");
+      setShowResetRequestForm(false);
+      await load();
+    } catch (err: any) {
+      setError(err.response?.data?.error ?? "Failed to request account reset");
+    }
+  }
+
+  async function handleApproveReset() {
+    if (!pendingReset) return;
+    setError(null);
+    try {
+      await api.post(`/accounts/reset-requests/${pendingReset.id}/approve`);
+      await load();
+    } catch (err: any) {
+      setError(err.response?.data?.error ?? "Failed to approve account reset");
+    }
+  }
+
+  async function handleRejectReset(e: FormEvent) {
+    e.preventDefault();
+    if (!pendingReset) return;
+    setError(null);
+    try {
+      await api.post(`/accounts/reset-requests/${pendingReset.id}/reject`, { reason: rejectReason });
+      setRejectReason("");
+      await load();
+    } catch (err: any) {
+      setError(err.response?.data?.error ?? "Failed to reject account reset");
+    }
   }
 
   useEffect(() => {
@@ -250,10 +308,90 @@ export default function AccountsManagementPage() {
             >
               {t("accounts.releaseFunds")}
             </button>
+
+            {!pendingReset && (
+              <button
+                type="button"
+                onClick={() => setShowResetRequestForm((v) => !v)}
+                className="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+              >
+                {t("accounts.reset.requestReset")}
+              </button>
+            )}
+            {pendingReset?.status === "pending" && (
+              <span className="rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                {t("accounts.reset.awaitingApproval")}
+              </span>
+            )}
+            {pendingReset?.status === "approved" && (
+              <button
+                type="button"
+                onClick={() => setShowResetBalanceModal(true)}
+                className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+              >
+                {t("accounts.reset.enterOpeningBalances")}
+              </button>
+            )}
+          </div>
+        )}
+
+        {isTreasurer && showResetRequestForm && (
+          <form onSubmit={handleRequestReset} className="mb-4 flex flex-wrap items-end gap-2 rounded-md border border-red-200 p-3 dark:border-red-900">
+            <div className="min-w-64 flex-1">
+              <label className="block text-sm font-medium">{t("accounts.reset.reason")}</label>
+              <input
+                required
+                value={resetReason}
+                onChange={(e) => setResetReason(e.target.value)}
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+              />
+            </div>
+            <button type="submit" className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+              {t("accounts.reset.submitRequest")}
+            </button>
+          </form>
+        )}
+
+        {user?.role === "admin" && pendingReset?.status === "pending" && (
+          <div className="mb-4 space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
+            <p className="text-sm text-amber-800 dark:text-amber-300">
+              {t("accounts.reset.pendingRequestBy", {
+                name: pendingReset.requester?.profile?.fullName ?? pendingReset.requester?.email ?? "-",
+                reason: pendingReset.reason,
+              })}
+            </p>
+            <div className="flex flex-wrap items-end gap-2">
+              <button
+                type="button"
+                onClick={handleApproveReset}
+                className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+              >
+                {t("accounts.reset.approve")}
+              </button>
+              <form onSubmit={handleRejectReset} className="flex flex-wrap items-end gap-2">
+                <input
+                  required
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder={t("accounts.reset.rejectionReasonPlaceholder") ?? ""}
+                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-800"
+                />
+                <button type="submit" className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700">
+                  {t("accounts.reset.reject")}
+                </button>
+              </form>
+            </div>
           </div>
         )}
 
         {showPos && <PosEntryModal entries={entries} onClose={() => setShowPos(false)} onSaved={load} />}
+        {showResetBalanceModal && pendingReset?.status === "approved" && (
+          <AccountResetModal
+            resetId={pendingReset.id}
+            onClose={() => setShowResetBalanceModal(false)}
+            onApplied={load}
+          />
+        )}
 
         {isTreasurer && (
           <form onSubmit={handleSubmit} className="mb-6 flex flex-wrap items-end gap-2">

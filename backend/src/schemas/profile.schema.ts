@@ -50,3 +50,13 @@ export const labourContributionSchema = z.object({
   date: z.coerce.date().optional(),
   hours: z.coerce.number().positive().optional().nullable(),
 });
+
+export const fineSchema = z.object({
+  description: z.string().min(1),
+  amount: z.coerce.number().positive(),
+  fineDate: z.coerce.date().optional(),
+});
+
+export const membershipNoSchema = z.object({
+  membershipNo: z.string().min(1).max(50),
+});

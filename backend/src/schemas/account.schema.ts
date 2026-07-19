@@ -13,6 +13,7 @@ export const createAccountEntrySchema = z
     category: z.enum([...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES]),
     paymentMethod: z.enum(["cash", "bank"]),
     receiptIssued: z.boolean().optional(),
+    memberId: z.string().optional(),
   })
   .refine(
     (d) =>
@@ -26,4 +27,17 @@ export const createBudgetLineSchema = z.object({
   category: z.string().min(1),
   plannedAmount: z.coerce.number().positive(),
   year: z.coerce.number().int().min(2000).max(2100),
+});
+
+export const createAccountResetRequestSchema = z.object({
+  reason: z.string().min(1),
+});
+
+export const rejectAccountResetSchema = z.object({
+  reason: z.string().min(1),
+});
+
+export const applyAccountResetSchema = z.object({
+  openingCashBalance: z.coerce.number().min(0),
+  openingBankBalance: z.coerce.number().min(0),
 });

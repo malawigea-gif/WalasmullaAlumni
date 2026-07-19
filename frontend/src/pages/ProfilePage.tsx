@@ -147,7 +147,12 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">{t("profile.title")}</h1>
+      <h1 className="mb-1 text-2xl font-bold">{t("profile.title")}</h1>
+      {user.membershipNo && (
+        <p className="mb-4 text-sm text-slate-500">
+          {t("membershipNo.label")}: <span className="font-medium">{user.membershipNo}</span>
+        </p>
+      )}
 
       <div className="mb-6 flex items-center gap-4">
         {user.profile?.profilePhotoUrl ? (

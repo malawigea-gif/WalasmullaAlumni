@@ -12,7 +12,12 @@ export type AuditAction =
   | "password_reset"
   | "membership_type_changed"
   | "member_resigned"
-  | "member_reactivated";
+  | "member_reactivated"
+  | "membership_no_assigned"
+  | "account_reset_requested"
+  | "account_reset_approved"
+  | "account_reset_rejected"
+  | "account_reset_applied";
 
 export type MembershipType = "annual" | "honorary" | "exemplary" | "life";
 export type MembershipStatus = "active" | "inactive" | "resigned";
@@ -58,6 +63,7 @@ export interface Member {
   status: MemberStatus;
   deletedAt: string | null;
   createdAt: string;
+  membershipNo: string | null;
   membershipType: MembershipType;
   membershipStatus: MembershipStatus;
   membershipStatusUpdatedAt: string;
@@ -123,6 +129,45 @@ export interface LabourContribution {
   confirmedBy: string | null;
   confirmedAt: string | null;
   createdAt: string;
+}
+
+export interface Fine {
+  id: string;
+  memberId: string;
+  description: string;
+  amount: string;
+  fineDate: string;
+  recordedBy: string;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
+  createdAt: string;
+}
+
+export interface AdminNote {
+  id: string;
+  memberId: string;
+  authorId: string | null;
+  author?: Member | null;
+  note: string;
+  createdAt: string;
+}
+
+export type AccountResetStatus = "pending" | "approved" | "rejected" | "applied";
+
+export interface AccountReset {
+  id: string;
+  requestedBy: string;
+  requester?: Member;
+  reason: string;
+  requestedAt: string;
+  status: AccountResetStatus;
+  approvedBy: string | null;
+  approver?: Member | null;
+  approvedAt: string | null;
+  rejectionReason: string | null;
+  openingCashBalance: string | null;
+  openingBankBalance: string | null;
+  appliedAt: string | null;
 }
 
 export type MeetingType = "monthly" | "committee";
@@ -234,6 +279,8 @@ export interface AccountEntry {
   budgetLineId?: string | null;
   budgetLine?: BudgetLine | null;
   receiptIssued: boolean;
+  memberId?: string | null;
+  member?: Member | null;
 }
 
 export interface ReportSummary {

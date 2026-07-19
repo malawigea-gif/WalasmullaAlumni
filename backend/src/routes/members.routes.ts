@@ -2,7 +2,7 @@ import { Router } from "express";
 import QRCode from "qrcode";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
-import { authenticate, requireElevatedAccess, requireSelfOrElevated } from "../middleware/auth";
+import { authenticate, requireAdminOrSecretary, requireElevatedAccess, requireSelfOrElevated } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
@@ -11,7 +11,9 @@ import {
   childSchema,
   donationSchema,
   feePaymentSchema,
+  fineSchema,
   labourContributionSchema,
+  membershipNoSchema,
   profileUpdateSchema,
 } from "../schemas/profile.schema";
 
@@ -79,6 +81,19 @@ router.get(
 );
 
 router.get(
+  "/by-membership-no/:membershipNo",
+  requireElevatedAccess,
+  asyncHandler(async (req, res) => {
+    const member = await prisma.member.findUnique({
+      where: { membershipNo: req.params.membershipNo },
+      select: { id: true },
+    });
+    if (!member) throw new ApiError(404, "No member found with this membership number");
+    res.json({ memberId: member.id });
+  })
+);
+
+router.get(
   "/:id",
   requireSelfOrElevated(),
   asyncHandler(async (req, res) => {
@@ -112,6 +127,30 @@ router.put(
       include: { profile: true, children: true },
     });
     res.json(toPublicMember(member));
+  })
+);
+
+router.put(
+  "/:id/membership-no",
+  requireAdminOrSecretary,
+  validateBody(membershipNoSchema),
+  asyncHandler(async (req, res) => {
+    try {
+      const member = await prisma.member.update({
+        where: { id: req.params.id },
+        data: { membershipNo: req.body.membershipNo },
+        include: { profile: true, children: true },
+      });
+      await prisma.auditLog.create({
+        data: { actorId: req.user!.id, targetId: req.params.id, action: "membership_no_assigned" },
+      });
+      res.json(toPublicMember(member));
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        throw new ApiError(409, "This membership number is already assigned to another member");
+      }
+      throw e;
+    }
   })
 );
 
@@ -224,6 +263,52 @@ router.patch(
 
     const updated = await prisma.donation.update({
       where: { id: donation.id },
+      data: { confirmedBy: req.user!.id, confirmedAt: new Date() },
+    });
+    res.json(updated);
+  })
+);
+
+router.get(
+  "/:id/fines",
+  requireSelfOrElevated(),
+  asyncHandler(async (req, res) => {
+    const fines = await prisma.fine.findMany({
+      where: { memberId: req.params.id },
+      orderBy: { fineDate: "desc" },
+    });
+    res.json(fines);
+  })
+);
+
+router.post(
+  "/:id/fines",
+  requireElevatedAccess,
+  validateBody(fineSchema),
+  asyncHandler(async (req, res) => {
+    const fine = await prisma.fine.create({
+      data: {
+        memberId: req.params.id,
+        description: req.body.description,
+        amount: req.body.amount,
+        fineDate: req.body.fineDate ?? new Date(),
+        recordedBy: req.user!.id,
+      },
+    });
+    res.status(201).json(fine);
+  })
+);
+
+router.patch(
+  "/:id/fines/:fineId/confirm",
+  requireElevatedAccess,
+  asyncHandler(async (req, res) => {
+    const fine = await prisma.fine.findUnique({ where: { id: req.params.fineId } });
+    if (!fine || fine.memberId !== req.params.id) throw new ApiError(404, "Fine not found");
+    if (fine.confirmedAt) throw new ApiError(409, "This fine has already been confirmed");
+
+    const updated = await prisma.fine.update({
+      where: { id: fine.id },
       data: { confirmedBy: req.user!.id, confirmedAt: new Date() },
     });
     res.json(updated);

@@ -9,10 +9,10 @@ const memberLinks = [
   { to: "/fees", key: "fees" },
   { to: "/donations", key: "donations" },
   { to: "/labour", key: "labour" },
+  { to: "/fines", key: "fines" },
   { to: "/attendance", key: "attendance" },
   { to: "/qr-code", key: "qrCode" },
   { to: "/inbox", key: "inbox" },
-  { to: "/accounts", key: "accounts" },
 ] as const;
 
 const executiveLinks = [

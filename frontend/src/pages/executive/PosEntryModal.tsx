@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { Html5Qrcode } from "html5-qrcode";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../lib/api";
 import { printReceipt } from "../../lib/receipt";
@@ -48,7 +49,75 @@ export default function PosEntryModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [membershipNoInput, setMembershipNoInput] = useState("");
+  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string } | null>(null);
+  const [memberLookupError, setMemberLookupError] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const busyRef = useRef(false);
+
   const isIncome = selection !== "expense";
+
+  useEffect(() => {
+    return () => {
+      scannerRef.current?.stop().catch(() => {});
+    };
+  }, []);
+
+  async function lookupByMembershipNo(e: FormEvent) {
+    e.preventDefault();
+    setMemberLookupError(null);
+    if (!membershipNoInput.trim()) return;
+    try {
+      const { data } = await api.get(`/members/by-membership-no/${encodeURIComponent(membershipNoInput.trim())}`);
+      await resolveMember(data.memberId);
+    } catch (err: any) {
+      setMemberLookupError(err.response?.data?.error ?? "Member not found");
+    }
+  }
+
+  async function resolveMember(memberId: string) {
+    const { data } = await api.get(`/members/${memberId}`);
+    setSelectedMember({ id: data.id, name: data.profile?.fullName ?? data.email });
+    setMembershipNoInput("");
+  }
+
+  async function handleScanSuccess(decodedText: string) {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    try {
+      const { data } = await api.get(`/members/by-qr/${encodeURIComponent(decodedText)}`);
+      await stopScanning();
+      await resolveMember(data.memberId);
+    } catch (err: any) {
+      setMemberLookupError(err.response?.data?.error ?? "Scan failed");
+      busyRef.current = false;
+    }
+  }
+
+  async function startScanning() {
+    setMemberLookupError(null);
+    const scanner = new Html5Qrcode("pos-member-qr-reader");
+    scannerRef.current = scanner;
+    try {
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        handleScanSuccess,
+        undefined
+      );
+      setScanning(true);
+    } catch {
+      setMemberLookupError(t("scanner.cameraPermission"));
+    }
+  }
+
+  async function stopScanning() {
+    await scannerRef.current?.stop().catch(() => {});
+    scannerRef.current = null;
+    setScanning(false);
+    busyRef.current = false;
+  }
 
   const todaysEntries = entries
     .filter((e) => e.recordedBy === user?.id && e.entryDate.slice(0, 10) === todayDateInput())
@@ -76,6 +145,10 @@ export default function PosEntryModal({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    if (isIncome && !selectedMember) {
+      setError(t("accounts.pos.memberRequired"));
+      return;
+    }
     setSaving(true);
     try {
       const { data } = await api.post("/accounts/entries", {
@@ -86,6 +159,7 @@ export default function PosEntryModal({
         amount: Number(amount),
         entryDate,
         receiptIssued: isIncome && issueReceipt,
+        memberId: isIncome ? selectedMember?.id : undefined,
       });
 
       if (issueReceipt) {
@@ -95,6 +169,7 @@ export default function PosEntryModal({
       setDescription("");
       setAmount("");
       setEntryDate(todayDateInput());
+      setSelectedMember(null);
       onSaved();
     } catch (err: any) {
       setError(err.response?.data?.error ?? "Failed to add entry");
@@ -135,6 +210,60 @@ export default function PosEntryModal({
             </button>
           ))}
         </div>
+
+        {isIncome && (
+          <div className="mb-4 rounded-md border border-slate-200 p-3 dark:border-slate-800">
+            <h3 className="mb-2 text-sm font-semibold text-slate-500">{t("accounts.pos.selectMember")}</h3>
+            {selectedMember ? (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{selectedMember.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMember(null)}
+                  className="text-xs text-blue-700 hover:underline dark:text-blue-400"
+                >
+                  {t("accounts.pos.changeMember")}
+                </button>
+              </div>
+            ) : (
+              <>
+                <form onSubmit={lookupByMembershipNo} className="flex gap-2">
+                  <input
+                    value={membershipNoInput}
+                    onChange={(e) => setMembershipNoInput(e.target.value)}
+                    placeholder={t("membershipNo.label") ?? ""}
+                    className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                  >
+                    {t("common.search")}
+                  </button>
+                  {!scanning ? (
+                    <button
+                      type="button"
+                      onClick={startScanning}
+                      className="rounded-md border border-blue-600 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-slate-800"
+                    >
+                      {t("members.scanQr")}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={stopScanning}
+                      className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                    >
+                      {t("scanner.stopScanning")}
+                    </button>
+                  )}
+                </form>
+                {memberLookupError && <p className="mt-2 text-xs text-red-700 dark:text-red-400">{memberLookupError}</p>}
+                {scanning && <div id="pos-member-qr-reader" className="mx-auto mt-3 max-w-xs" />}
+              </>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>

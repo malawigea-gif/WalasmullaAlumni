@@ -112,6 +112,7 @@ export default function MembersPage() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800">
+                <th className="py-2">{t("membershipNo.label")}</th>
                 <th className="py-2">{t("auth.fullName")}</th>
                 <th className="py-2">{t("auth.email")}</th>
                 <th className="py-2">{t("common.district")}</th>
@@ -121,6 +122,7 @@ export default function MembersPage() {
             <tbody>
               {members.map((m) => (
                 <tr key={m.id} className="border-b border-slate-100 dark:border-slate-800/50">
+                  <td className="py-2">{m.membershipNo ?? "-"}</td>
                   <td className="py-2">{m.profile?.fullName ?? "-"}</td>
                   <td className="py-2">{m.email}</td>
                   <td className="py-2">{m.profile?.district ?? "-"}</td>

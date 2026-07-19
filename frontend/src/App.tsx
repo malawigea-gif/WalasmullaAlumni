@@ -10,10 +10,10 @@ import ProfilePage from "./pages/ProfilePage";
 import FeePaymentsPage from "./pages/FeePaymentsPage";
 import DonationsPage from "./pages/DonationsPage";
 import LabourContributionsPage from "./pages/LabourContributionsPage";
+import FinesPage from "./pages/FinesPage";
 import AttendancePage from "./pages/AttendancePage";
 import QrCodePage from "./pages/QrCodePage";
 import InboxPage from "./pages/InboxPage";
-import AccountsPage from "./pages/AccountsPage";
 
 import MembersPage from "./pages/executive/MembersPage";
 import MemberDetailPage from "./pages/executive/MemberDetailPage";
@@ -39,10 +39,10 @@ export default function App() {
           <Route path="/fees" element={<FeePaymentsPage />} />
           <Route path="/donations" element={<DonationsPage />} />
           <Route path="/labour" element={<LabourContributionsPage />} />
+          <Route path="/fines" element={<FinesPage />} />
           <Route path="/attendance" element={<AttendancePage />} />
           <Route path="/qr-code" element={<QrCodePage />} />
           <Route path="/inbox" element={<InboxPage />} />
-          <Route path="/accounts" element={<AccountsPage />} />
 
           <Route element={<ProtectedRoute executiveOnly />}>
             <Route path="/members" element={<MembersPage />} />

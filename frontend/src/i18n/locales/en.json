@@ -6,6 +6,7 @@
     "fees": "Fee Payments",
     "donations": "Donations",
     "labour": "Labour Contributions",
+    "fines": "My Fines",
     "attendance": "My Attendance",
     "qrCode": "My QR Code",
     "inbox": "Inbox",
@@ -115,6 +116,17 @@
     "title": "Labour Contributions",
     "recordContribution": "Record Contribution",
     "hours": "Hours"
+  },
+  "fines": {
+    "title": "Fines",
+    "recordFine": "Record Fine"
+  },
+  "membershipNo": {
+    "title": "Membership Number",
+    "label": "Membership No."
+  },
+  "report": {
+    "downloadPdf": "Download Full Report (PDF)"
   },
   "attendance": {
     "title": "My Attendance History",
@@ -301,7 +313,26 @@
       "issueReceipt": "Issue Receipt",
       "receiptSkipsApproval": "Income entries with a receipt issued do not require approval.",
       "saveAndPrint": "Save & Print Receipt",
-      "todaysEntries": "Today's Entries"
+      "todaysEntries": "Today's Entries",
+      "selectMember": "Select Member",
+      "changeMember": "Change",
+      "memberRequired": "Please select a member before recording this entry."
+    },
+    "reset": {
+      "requestReset": "Reset Account",
+      "awaitingApproval": "Reset Requested — Awaiting Admin Approval",
+      "enterOpeningBalances": "Enter Opening Balances",
+      "reason": "Reason",
+      "submitRequest": "Submit Request",
+      "pendingRequestBy": "{{name}} has requested an account reset: \"{{reason}}\"",
+      "approve": "Approve",
+      "reject": "Reject",
+      "rejectionReasonPlaceholder": "Reason for rejection",
+      "openingBalanceTitle": "New Account Opening Balances",
+      "openingBalanceNote": "Enter the cash and bank balances to start the new accounting period with. All prior entries remain on record but will no longer count toward the displayed balance.",
+      "openingCashBalance": "Opening Cash Balance",
+      "openingBankBalance": "Opening Bank Balance",
+      "applyReset": "Start New Period"
     }
   },
   "dashboard": {
@@ -348,7 +379,12 @@
       "password_reset": "Password Reset",
       "membership_type_changed": "Membership Type Changed",
       "member_resigned": "Member Resigned",
-      "member_reactivated": "Member Reactivated"
+      "member_reactivated": "Member Reactivated",
+      "membership_no_assigned": "Membership Number Assigned",
+      "account_reset_requested": "Account Reset Requested",
+      "account_reset_approved": "Account Reset Approved",
+      "account_reset_rejected": "Account Reset Rejected",
+      "account_reset_applied": "Account Reset Applied"
     },
     "membershipType": "Membership Type",
     "membershipStatus": "Membership Status",
@@ -369,7 +405,8 @@
     "notes": {
       "title": "Admin Notes",
       "placeholder": "Special notes about this member (visible to admins only)",
-      "save": "Save Notes"
+      "add": "Add Note",
+      "unknownAuthor": "Unknown"
     }
   }
 }

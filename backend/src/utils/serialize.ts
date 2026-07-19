@@ -1,7 +1,7 @@
 import { Member } from "@prisma/client";
 
 export function toPublicMember<T extends Partial<Member>>(member: T) {
-  const { passwordHash, adminNotes, ...rest } = member;
+  const { passwordHash, ...rest } = member;
   return rest;
 }
 

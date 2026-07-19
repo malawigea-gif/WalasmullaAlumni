@@ -78,6 +78,13 @@ export function requireTreasurer(req: Request, _res: Response, next: NextFunctio
   next();
 }
 
+/** Admin, or the member currently holding the secretary position. */
+export function requireAdminOrSecretary(req: Request, _res: Response, next: NextFunction) {
+  if (req.user?.role === "admin") return next();
+  if (req.user?.role === "executive" && req.user?.executivePosition === "secretary") return next();
+  throw new ApiError(403, "Admin or secretary access required");
+}
+
 async function hasActiveDelegation(memberId: string): Promise<boolean> {
   const delegation = await prisma.privilegeDelegation.findFirst({
     where: { memberId, isActive: true },

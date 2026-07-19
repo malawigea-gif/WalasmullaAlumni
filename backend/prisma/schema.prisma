@@ -30,6 +30,11 @@ enum AuditAction {
   membership_type_changed
   member_resigned
   member_reactivated
+  membership_no_assigned
+  account_reset_requested
+  account_reset_approved
+  account_reset_rejected
+  account_reset_applied
 }
 
 enum ExecutivePositionType {
@@ -94,6 +99,13 @@ enum MembershipStatus {
   resigned
 }
 
+enum AccountResetStatus {
+  pending
+  approved
+  rejected
+  applied
+}
+
 model Member {
   id                  String   @id @default(cuid())
   email               String   @unique
@@ -105,7 +117,7 @@ model Member {
   deletedAt           DateTime? @map("deleted_at")
   createdAt           DateTime @default(now()) @map("created_at")
 
-  adminNotes          String?  @map("admin_notes")
+  membershipNo        String?  @unique @map("membership_no")
   membershipType      MembershipType @default(annual) @map("membership_type")
   membershipStatus    MembershipStatus @default(active) @map("membership_status")
   membershipStatusUpdatedAt DateTime @default(now()) @map("membership_status_updated_at")
@@ -123,15 +135,26 @@ model Member {
   feePayments         FeePayment[]        @relation("MemberFeePayments")
   donations           Donation[]          @relation("MemberDonations")
   labourContributions LabourContribution[] @relation("MemberLabourContributions")
+  fines               Fine[]              @relation("MemberFines")
 
   recordedFeePayments         FeePayment[]        @relation("RecordedByFeePayments")
   recordedDonations           Donation[]          @relation("RecordedByDonations")
   recordedLabourContributions LabourContribution[] @relation("RecordedByLabourContributions")
+  recordedFines                Fine[]              @relation("RecordedByFines")
 
   confirmedFeePayments         FeePayment[]        @relation("ConfirmedByFeePayments")
   confirmedDonations           Donation[]          @relation("ConfirmedByDonations")
   confirmedLabourContributions LabourContribution[] @relation("ConfirmedByLabourContributions")
   confirmedAttendances         MeetingAttendance[] @relation("ConfirmedByAttendance")
+  confirmedFines                Fine[]              @relation("ConfirmedByFines")
+
+  adminNoteEntries    AdminNote[] @relation("MemberAdminNotes")
+  authoredAdminNotes  AdminNote[] @relation("AdminNoteAuthor")
+
+  accountResetsRequested AccountReset[] @relation("AccountResetRequestedBy")
+  accountResetsApproved  AccountReset[] @relation("AccountResetApprovedBy")
+
+  linkedAccountEntries AccountEntry[] @relation("AccountEntryMember")
 
   meetingAttendances  MeetingAttendance[] @relation("MemberAttendance")
   scannedAttendances  MeetingAttendance[] @relation("ScannedByAttendance")
@@ -269,6 +292,53 @@ model LabourContribution {
   @@map("labour_contributions")
 }
 
+model Fine {
+  id          String    @id @default(cuid())
+  memberId    String    @map("member_id")
+  member      Member    @relation("MemberFines", fields: [memberId], references: [id], onDelete: Cascade)
+  description String
+  amount      Decimal   @db.Decimal(10, 2)
+  fineDate    DateTime  @map("fine_date")
+  recordedBy  String    @map("recorded_by")
+  recorder    Member    @relation("RecordedByFines", fields: [recordedBy], references: [id])
+  confirmedBy String?   @map("confirmed_by")
+  confirmer   Member?   @relation("ConfirmedByFines", fields: [confirmedBy], references: [id])
+  confirmedAt DateTime? @map("confirmed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("fines")
+}
+
+model AdminNote {
+  id        String   @id @default(cuid())
+  memberId  String   @map("member_id")
+  member    Member   @relation("MemberAdminNotes", fields: [memberId], references: [id], onDelete: Cascade)
+  authorId  String?  @map("author_id")
+  author    Member?  @relation("AdminNoteAuthor", fields: [authorId], references: [id])
+  note      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("admin_notes")
+}
+
+model AccountReset {
+  id                 String              @id @default(cuid())
+  requestedBy        String              @map("requested_by")
+  requester          Member              @relation("AccountResetRequestedBy", fields: [requestedBy], references: [id])
+  reason             String
+  requestedAt        DateTime            @default(now()) @map("requested_at")
+  status             AccountResetStatus  @default(pending)
+  approvedBy         String?             @map("approved_by")
+  approver           Member?             @relation("AccountResetApprovedBy", fields: [approvedBy], references: [id])
+  approvedAt         DateTime?           @map("approved_at")
+  rejectionReason    String?             @map("rejection_reason")
+  openingCashBalance Decimal?            @db.Decimal(12, 2) @map("opening_cash_balance")
+  openingBankBalance Decimal?            @db.Decimal(12, 2) @map("opening_bank_balance")
+  appliedAt          DateTime?           @map("applied_at")
+
+  @@map("account_resets")
+}
+
 model Meeting {
   id               String      @id @default(cuid())
   title            String
@@ -373,6 +443,11 @@ model AccountEntry {
   recordedBy   String           @map("recorded_by")
   recorder     Member           @relation("RecordedByAccountEntries", fields: [recordedBy], references: [id])
   createdAt    DateTime         @default(now()) @map("created_at")
+
+  /// When set (via the POS window's member picker), this income entry also has a matching
+  /// FeePayment/Donation/Fine row created for that member in the same transaction.
+  memberId     String?          @map("member_id")
+  member       Member?          @relation("AccountEntryMember", fields: [memberId], references: [id])
 
   /// When set, this expense was drawn against a budget line by the treasurer and needs no further approval.
   budgetLineId String?          @map("budget_line_id")

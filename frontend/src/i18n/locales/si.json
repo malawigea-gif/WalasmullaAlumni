@@ -6,6 +6,7 @@
     "fees": "සාමාජික ගාස්තු",
     "donations": "පරිත්‍යාග",
     "labour": "ශ්‍රම දායකත්වය",
+    "fines": "මගේ දඩ මුදල්",
     "attendance": "මගේ පැමිණීම",
     "qrCode": "මගේ QR කේතය",
     "inbox": "පණිවිඩ පෙට්ටිය",
@@ -115,6 +116,17 @@
     "title": "ශ්‍රම දායකත්වය",
     "recordContribution": "දායකත්වයක් සටහන් කරන්න",
     "hours": "පැය ගණන"
+  },
+  "fines": {
+    "title": "දඩ මුදල්",
+    "recordFine": "දඩයක් සටහන් කරන්න"
+  },
+  "membershipNo": {
+    "title": "සාමාජික අංකය",
+    "label": "සාමාජික අංකය"
+  },
+  "report": {
+    "downloadPdf": "සම්පූර්ණ වාර්තාව බාගන්න (PDF)"
   },
   "attendance": {
     "title": "මගේ පැමිණීමේ ඉතිහාසය",
@@ -301,7 +313,26 @@
       "issueReceipt": "රිසිට් පත නිකුත් කරන්න",
       "receiptSkipsApproval": "රිසිට් පතක් නිකුත් කළ ආදායම් සටහන් සඳහා අනුමැතිය අවශ්‍ය නොවේ.",
       "saveAndPrint": "සුරකින්න සහ රිසිට් පත මුද්‍රණය කරන්න",
-      "todaysEntries": "අද දිනයේ සටහන්"
+      "todaysEntries": "අද දිනයේ සටහන්",
+      "selectMember": "සාමාජිකයා තෝරන්න",
+      "changeMember": "වෙනස් කරන්න",
+      "memberRequired": "මෙම සටහන සටහන් කිරීමට පෙර සාමාජිකයෙකු තෝරන්න."
+    },
+    "reset": {
+      "requestReset": "ගිණුම Reset කරන්න",
+      "awaitingApproval": "Reset ඉල්ලීම කර ඇත — Admin අනුමැතිය බලාපොරොත්තුවෙන්",
+      "enterOpeningBalances": "ආරම්භක ශේෂ ඇතුලත් කරන්න",
+      "reason": "හේතුව",
+      "submitRequest": "ඉල්ලීම ඉදිරිපත් කරන්න",
+      "pendingRequestBy": "{{name}} ගිණුම reset කිරීමට ඉල්ලා ඇත: \"{{reason}}\"",
+      "approve": "අනුමත කරන්න",
+      "reject": "ප්‍රතික්ෂේප කරන්න",
+      "rejectionReasonPlaceholder": "ප්‍රතික්ෂේප කිරීමට හේතුව",
+      "openingBalanceTitle": "නව ගිණුමේ ආරම්භක ශේෂ",
+      "openingBalanceNote": "නව ගිණුම් කාලපරිච්ඡේදය ආරම්භ කිරීමට මුදල් හා බැංකු ශේෂ ඇතුලත් කරන්න. පෙර සියලුම සටහන් වාර්තාවේ පවතිනු ඇත, නමුත් පෙන්වන ශේෂයට ඇතුළත් නොවේ.",
+      "openingCashBalance": "ආරම්භක මුදල් ශේෂය",
+      "openingBankBalance": "ආරම්භක බැංකු ශේෂය",
+      "applyReset": "නව කාලපරිච්ඡේදය ආරම්භ කරන්න"
     }
   },
   "dashboard": {
@@ -348,7 +379,12 @@
       "password_reset": "මුරපදය යළි සකසන ලදී",
       "membership_type_changed": "සාමාජිකත්ව වර්ගය වෙනස් කරන ලදී",
       "member_resigned": "සාමාජිකත්වයෙන් ඉල්ලා අස්විය",
-      "member_reactivated": "නැවත සක්‍රීය කරන ලදී"
+      "member_reactivated": "නැවත සක්‍රීය කරන ලදී",
+      "membership_no_assigned": "සාමාජික අංකය ලබා දෙන ලදී",
+      "account_reset_requested": "ගිණුම Reset කිරීමට ඉල්ලා ඇත",
+      "account_reset_approved": "ගිණුම Reset කිරීම අනුමත කරන ලදී",
+      "account_reset_rejected": "ගිණුම Reset කිරීම ප්‍රතික්ෂේප කරන ලදී",
+      "account_reset_applied": "ගිණුම Reset කරන ලදී"
     },
     "membershipType": "සාමාජිකත්ව වර්ගය",
     "membershipStatus": "සාමාජිකත්ව තත්ත්වය",
@@ -369,7 +405,8 @@
     "notes": {
       "title": "පරිපාලක සටහන්",
       "placeholder": "මෙම සාමාජිකයා පිළිබඳ විශේෂ සටහන් (පරිපාලකයින්ට පමණක් පෙනේ)",
-      "save": "සටහන් සුරකින්න"
+      "add": "සටහන එකතු කරන්න",
+      "unknownAuthor": "නොදනී"
     }
   }
 }

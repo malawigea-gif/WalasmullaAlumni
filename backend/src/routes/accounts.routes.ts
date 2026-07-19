@@ -1,11 +1,17 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
-import { authenticate, requireExecutiveOrAdmin, requireTreasurer } from "../middleware/auth";
+import { authenticate, requireAdmin, requireExecutiveOrAdmin, requireTreasurer } from "../middleware/auth";
 import { validateBody } from "../middleware/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { SAFE_MEMBER_SELECT } from "../utils/serialize";
-import { createAccountEntrySchema, createBudgetLineSchema } from "../schemas/account.schema";
+import {
+  applyAccountResetSchema,
+  createAccountEntrySchema,
+  createAccountResetRequestSchema,
+  createBudgetLineSchema,
+  rejectAccountResetSchema,
+} from "../schemas/account.schema";
 
 const router = Router();
 
@@ -22,35 +28,21 @@ function computeIsFullyApproved(entry: {
 
 router.get(
   "/entries",
-  asyncHandler(async (req, res) => {
-    const isElevated = req.user!.role === "executive" || req.user!.role === "admin";
-
-    if (isElevated) {
-      const entries = await prisma.accountEntry.findMany({
-        include: {
-          recorder: { select: SAFE_MEMBER_SELECT },
-          budgetLine: true,
-          approvals: { include: { approver: { select: SAFE_MEMBER_SELECT } } },
-        },
-        orderBy: { entryDate: "desc" },
-      });
-      res.json(entries.map((e) => ({ ...e, isFullyApproved: computeIsFullyApproved(e) })));
-      return;
-    }
-
-    const now = new Date();
-    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  requireExecutiveOrAdmin,
+  asyncHandler(async (_req, res) => {
     const entries = await prisma.accountEntry.findMany({
-      where: { entryDate: { lt: startOfCurrentMonth } },
-      include: { approvals: true },
+      include: {
+        recorder: { select: SAFE_MEMBER_SELECT },
+        budgetLine: true,
+        approvals: { include: { approver: { select: SAFE_MEMBER_SELECT } } },
+      },
       orderBy: { entryDate: "desc" },
     });
-    const approvedOnly = entries
-      .filter((e) => computeIsFullyApproved(e))
-      .map(({ approvals: _approvals, ...e }) => ({ ...e, isFullyApproved: true }));
-    res.json(approvedOnly);
+    res.json(entries.map((e) => ({ ...e, isFullyApproved: computeIsFullyApproved(e) })));
   })
 );
+
+const MEMBER_LINKED_INCOME_CATEGORIES = ["membership_fee", "aid", "fine"] as const;
 
 router.post(
   "/entries",
@@ -65,20 +57,72 @@ router.post(
       if (!budgetLine) throw new ApiError(404, "Budget line not found");
     }
 
-    const entry = await prisma.accountEntry.create({
-      data: {
-        type: req.body.type,
-        category: req.body.category,
-        paymentMethod: req.body.paymentMethod,
-        description: req.body.description,
-        amount: req.body.amount,
-        entryDate: req.body.entryDate ?? new Date(),
-        recordedBy: req.user!.id,
-        budgetLineId: req.body.budgetLineId ?? null,
-        receiptIssued: req.body.type === "income" && !!req.body.receiptIssued,
-      },
-      include: { budgetLine: true },
+    const entryDate: Date = req.body.entryDate ?? new Date();
+    const linkMember =
+      req.body.type === "income" &&
+      req.body.memberId &&
+      (MEMBER_LINKED_INCOME_CATEGORIES as readonly string[]).includes(req.body.category);
+
+    if (req.body.memberId) {
+      const member = await prisma.member.findUnique({ where: { id: req.body.memberId } });
+      if (!member) throw new ApiError(404, "Member not found");
+    }
+
+    const entry = await prisma.$transaction(async (tx) => {
+      const created = await tx.accountEntry.create({
+        data: {
+          type: req.body.type,
+          category: req.body.category,
+          paymentMethod: req.body.paymentMethod,
+          description: req.body.description,
+          amount: req.body.amount,
+          entryDate,
+          recordedBy: req.user!.id,
+          budgetLineId: req.body.budgetLineId ?? null,
+          receiptIssued: req.body.type === "income" && !!req.body.receiptIssued,
+          memberId: req.body.memberId ?? null,
+        },
+        include: { budgetLine: true },
+      });
+
+      if (linkMember) {
+        const memberId: string = req.body.memberId;
+        if (req.body.category === "membership_fee") {
+          await tx.feePayment.create({
+            data: {
+              memberId,
+              amount: req.body.amount,
+              year: entryDate.getFullYear(),
+              paidDate: entryDate,
+              recordedBy: req.user!.id,
+            },
+          });
+        } else if (req.body.category === "aid") {
+          await tx.donation.create({
+            data: {
+              memberId,
+              description: req.body.description,
+              amount: req.body.amount,
+              donatedDate: entryDate,
+              recordedBy: req.user!.id,
+            },
+          });
+        } else if (req.body.category === "fine") {
+          await tx.fine.create({
+            data: {
+              memberId,
+              description: req.body.description,
+              amount: req.body.amount,
+              fineDate: entryDate,
+              recordedBy: req.user!.id,
+            },
+          });
+        }
+      }
+
+      return created;
     });
+
     res.status(201).json({ ...entry, approvals: [], isFullyApproved: computeIsFullyApproved({ ...entry, approvals: [] }) });
   })
 );
@@ -154,6 +198,125 @@ router.post(
       },
     });
     res.status(201).json({ ...line, spent: "0.00", remaining: line.plannedAmount.toString() });
+  })
+);
+
+router.get(
+  "/reset-status",
+  requireExecutiveOrAdmin,
+  asyncHandler(async (_req, res) => {
+    const [appliedReset, pendingRequest] = await Promise.all([
+      prisma.accountReset.findFirst({
+        where: { status: "applied" },
+        orderBy: { appliedAt: "desc" },
+      }),
+      prisma.accountReset.findFirst({
+        where: { status: { in: ["pending", "approved"] } },
+        include: { requester: { select: SAFE_MEMBER_SELECT }, approver: { select: SAFE_MEMBER_SELECT } },
+        orderBy: { requestedAt: "desc" },
+      }),
+    ]);
+    res.json({ appliedReset, pendingRequest });
+  })
+);
+
+router.post(
+  "/reset-requests",
+  requireTreasurer,
+  validateBody(createAccountResetRequestSchema),
+  asyncHandler(async (req, res) => {
+    const existing = await prisma.accountReset.findFirst({ where: { status: { in: ["pending", "approved"] } } });
+    if (existing) throw new ApiError(409, "An account reset request is already in progress");
+
+    const [reset] = await prisma.$transaction([
+      prisma.accountReset.create({
+        data: { requestedBy: req.user!.id, reason: req.body.reason },
+        include: { requester: { select: SAFE_MEMBER_SELECT } },
+      }),
+      prisma.auditLog.create({
+        data: { actorId: req.user!.id, targetId: req.user!.id, action: "account_reset_requested", reason: req.body.reason },
+      }),
+    ]);
+    res.status(201).json(reset);
+  })
+);
+
+router.post(
+  "/reset-requests/:id/approve",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const reset = await prisma.accountReset.findUnique({ where: { id: req.params.id } });
+    if (!reset) throw new ApiError(404, "Reset request not found");
+    if (reset.status !== "pending") throw new ApiError(409, "This request is not pending approval");
+
+    const [updated] = await prisma.$transaction([
+      prisma.accountReset.update({
+        where: { id: reset.id },
+        data: { status: "approved", approvedBy: req.user!.id, approvedAt: new Date() },
+        include: { requester: { select: SAFE_MEMBER_SELECT }, approver: { select: SAFE_MEMBER_SELECT } },
+      }),
+      prisma.auditLog.create({
+        data: { actorId: req.user!.id, targetId: reset.requestedBy, action: "account_reset_approved" },
+      }),
+    ]);
+    res.json(updated);
+  })
+);
+
+router.post(
+  "/reset-requests/:id/reject",
+  requireAdmin,
+  validateBody(rejectAccountResetSchema),
+  asyncHandler(async (req, res) => {
+    const reset = await prisma.accountReset.findUnique({ where: { id: req.params.id } });
+    if (!reset) throw new ApiError(404, "Reset request not found");
+    if (reset.status !== "pending") throw new ApiError(409, "This request is not pending approval");
+
+    const [updated] = await prisma.$transaction([
+      prisma.accountReset.update({
+        where: { id: reset.id },
+        data: { status: "rejected", approvedBy: req.user!.id, approvedAt: new Date(), rejectionReason: req.body.reason },
+      }),
+      prisma.auditLog.create({
+        data: {
+          actorId: req.user!.id,
+          targetId: reset.requestedBy,
+          action: "account_reset_rejected",
+          reason: req.body.reason,
+        },
+      }),
+    ]);
+    res.json(updated);
+  })
+);
+
+router.post(
+  "/reset-requests/:id/apply",
+  requireTreasurer,
+  validateBody(applyAccountResetSchema),
+  asyncHandler(async (req, res) => {
+    const reset = await prisma.accountReset.findUnique({ where: { id: req.params.id } });
+    if (!reset) throw new ApiError(404, "Reset request not found");
+    if (reset.requestedBy !== req.user!.id) {
+      throw new ApiError(403, "Only the treasurer who requested this reset can apply it");
+    }
+    if (reset.status !== "approved") throw new ApiError(409, "This request has not been approved by an admin yet");
+
+    const [updated] = await prisma.$transaction([
+      prisma.accountReset.update({
+        where: { id: reset.id },
+        data: {
+          status: "applied",
+          openingCashBalance: req.body.openingCashBalance,
+          openingBankBalance: req.body.openingBankBalance,
+          appliedAt: new Date(),
+        },
+      }),
+      prisma.auditLog.create({
+        data: { actorId: req.user!.id, targetId: req.user!.id, action: "account_reset_applied" },
+      }),
+    ]);
+    res.json(updated);
   })
 );
 
