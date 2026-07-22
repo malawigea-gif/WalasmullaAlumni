@@ -24,3 +24,7 @@ services:
         value: 7d
       - key: UPLOAD_DIR
         value: uploads
+      - key: TRIAL_START_DATE
+        value: "2026-07-22"
+      - key: TRIAL_LENGTH_DAYS
+        value: "90"

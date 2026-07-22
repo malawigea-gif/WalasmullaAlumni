@@ -5,6 +5,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import TrialExpiredPage from "./pages/TrialExpiredPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import FeePaymentsPage from "./pages/FeePaymentsPage";
@@ -31,6 +32,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/trial-expired" element={<TrialExpiredPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>

@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import path from "path";
 import { env } from "./config/env";
 import { errorHandler } from "./middleware/errorHandler";
+import { trialGuard } from "./middleware/trial";
 
 import authRoutes from "./routes/auth.routes";
 import profileRoutes from "./routes/profile.routes";
@@ -32,6 +33,8 @@ export function createApp() {
   app.use("/uploads", express.static(path.join(process.cwd(), env.uploadDir)));
 
   app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
+
+  app.use("/api", trialGuard);
 
   app.use("/api/auth", authRoutes);
   app.use("/api/profile", profileRoutes);

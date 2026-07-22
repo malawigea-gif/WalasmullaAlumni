@@ -30,6 +30,12 @@ async function refreshAccessToken(): Promise<string | null> {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (error.response?.status === 403 && error.response?.data?.trialExpired) {
+      if (window.location.pathname !== "/trial-expired") {
+        window.location.href = "/trial-expired";
+      }
+      return Promise.reject(error);
+    }
     const originalRequest = error.config;
     if (error.response?.status === 401 && !originalRequest._retry && tokenStore.getRefreshToken()) {
       originalRequest._retry = true;

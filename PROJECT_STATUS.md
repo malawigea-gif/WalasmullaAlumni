@@ -441,6 +441,62 @@ Two notable decisions made along the way:
   pattern — one `prisma.$transaction` creates both the ledger row and the
   per-member record.
 
+## 6d. Account-Reset Backdated-Entry Verification (2026-07-22)
+
+Verified (live API calls against the running dev server/DB) that a member-linked
+`AccountEntry` recorded **after** an account reset but backdated to an `entryDate`
+**before** the reset's `appliedAt` behaves correctly with no code changes needed:
+it still appears in full in the paying member's own `FeePayment`/`Donation`/`Fine`
+history (those routes in `members.routes.ts` query by `memberId` only, entirely
+independent of `AccountReset`), but is correctly excluded from the current
+cashbook/balance on `AccountsManagementPage` because the existing client-side
+filter (`AccountsManagementPage.tsx`, `entryDate >= resetCutoff`) keys off
+`entryDate`, not `createdAt`. The backend budget-report PDF route applies the
+same `entryDate`-based cutoff. No bug found; no files changed. The test
+`AccountEntry`/`FeePayment` rows created during this check were deleted from
+the local dev DB afterward, and the local backend (`tsx watch`, ports 4000)
+and frontend (`vite`) dev servers spun up for this verification were stopped
+once it was done — no dev servers were left running.
+
+## 6e. Trial Mode (2026-07-22)
+
+The deployed backend enforces a time-limited trial: after `TRIAL_START_DATE` +
+`TRIAL_LENGTH_DAYS`, every `/api/*` route except `/api/health` returns `403`
+with `{ error: "Trial period has expired...", trialExpired: true }`. Before
+expiry, there is zero behavior change — every existing feature works exactly
+as documented above.
+
+- **Implementation**: a single middleware, `backend/src/middleware/trial.ts`
+  (`trialGuard`), registered in `backend/src/app.ts` right after the
+  `/api/health` route and before every other route — so health checks always
+  succeed but everything else is gated. If `TRIAL_START_DATE` is unset, the
+  code falls back to a hardcoded default (`2026-07-22`, `90` days) rather than
+  computing "now" dynamically, so the trial can't be bypassed by simply
+  deleting the env var locally or in a stray deployment.
+- **Frontend**: `frontend/src/lib/api.ts`'s axios response interceptor detects
+  `403` + `trialExpired: true` on any API call (including login) and redirects
+  to `/trial-expired`, which renders `frontend/src/pages/TrialExpiredPage.tsx`
+  instead of the normal login page.
+- **To extend the trial**: raise `TRIAL_LENGTH_DAYS` (or push out
+  `TRIAL_START_DATE`) in the Render dashboard env vars and redeploy — no code
+  change needed.
+- **To remove trial mode entirely** (e.g. once the client pays): delete
+  `backend/src/middleware/trial.ts`, remove the `app.use("/api", trialGuard)`
+  line + its import in `backend/src/app.ts`, delete
+  `frontend/src/pages/TrialExpiredPage.tsx`, remove the `/trial-expired` route
+  in `frontend/src/App.tsx`, and remove the `403`/`trialExpired` check in
+  `frontend/src/lib/api.ts`. Nothing else references trial logic.
+- **Verified locally**: set `TRIAL_START_DATE=2026-01-01` (90 days later is
+  well before today) in `backend/.env`, restarted the dev server, and
+  confirmed `/api/health` still returned `200` while `/api/auth/login`
+  returned `403` with the expired-trial body. Reverted the env var, restarted
+  again, and confirmed login returned `200` normally (falls back to the
+  code's built-in default, which is not yet expired).
+- Env vars are documented in `backend/.env.example` and declared with explicit
+  values in `render.yaml` (`TRIAL_START_DATE=2026-07-22`,
+  `TRIAL_LENGTH_DAYS=90`); the live Render service's dashboard env vars were
+  also set directly to the same values after this deploy.
+
 ## 7. Known Limitations
 
 - **Render free tier spins down after ~15 minutes of inactivity.** The first
